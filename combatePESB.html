@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Riscos no combate a incendios">
+<meta name="description" content="Riscos no combate a incendios florestais - Serra do Brigadeiro">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Riscos no combate a incendios - Serra do Brigadeiro</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjgwIiBmaWxsPSIjMGYxNzJhIi8+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIxODAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2RjMjYyNiIgc3Ryb2tlLXdpZHRoPSIyNCIvPjxwYXRoIGQ9Ik0yNTYgMTIwYy00MCA2MC04MCAxMjAtODAgMTgwIDAgNDQgMzYgODAgODAgODBzODAtMzYgODAtODBjMC02MC00MC0xMjAtODAtMTgweiIgZmlsbD0iI2Y5NzMxNiIvPjxwYXRoIGQ9Ik0yNTYgMTgwYy0yNSA0MC01MCA4MC01MCAxMjAgMCAyOCAyMiA1MCA1MCA1MHM1MC0yMiA1MC01MGMwLTQwLTI1LTgwLTUwLTEyMHoiIGZpbGw9IiNkYzI2MjYiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIzMDAiIHI9IjIwIiBmaWxsPSIjZmZmIi8+PC9zdmc+">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjgwIiBmaWxsPSIjMGYxNzJhIi8+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIxODAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2RjMjYyNiIgc3Ryb2tlLXdpZHRoPSIyNCIvPjxwYXRoIGQ9Ik0yNTYgMTIwYy00MCA2MC04MCAxMjAtODAgMTgwIDAgNDQgMzYgODAgODAgODBzODAtMzYgODAtODBjMC02MC00MC0xMjAtODAtMTgweiIgZmlsbD0iI2Y5NzMxNiIvPjxwYXRoIGQ9Ik0yNTYgMTgwYy0yNSA0MC01MCA4MC01MCAxMjAgMCAyOCAyMiA1MCA1MCA1MHM1MC0yMiA1MC01MGMwLTQwLTI1LTgwLTUwLTEyMHoiIGZpbGw9IiNkYzI2MjYiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIzMDAiIHI9IjIwIiBmaWxsPSIjZmZmIi8+PC9zdmc+">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',sans-serif;background:#0a0e17;color:#e2e8f0;overflow:hidden;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;width:100vw}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border-bottom:1px solid #334155;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:1000}
+.header-left{display:flex;align-items:center;gap:10px}
+.header-icon{width:36px;height:36px;background:linear-gradient(135deg,#dc2626,#f97316);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.header-title{display:flex;flex-direction:column;min-width:0}
+.header-title h1{font-size:14px;font-weight:700;color:#f8fafc;letter-spacing:-0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-title span{font-size:10px;color:#94a3b8;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.last-update{font-size:10px;color:#64748b;background:#1e293b;padding:3px 8px;border-radius:6px;border:1px solid #334155;white-space:nowrap}
+.refresh-btn{background:#2563eb;color:white;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;-webkit-touch-callout:none;user-select:none}
+.refresh-btn:active{transform:scale(0.95)}
+.refresh-btn:hover{background:#1d4ed8}
+.refresh-btn.loading{opacity:0.6;pointer-events:none}
+.main-content{display:flex;flex:1;overflow:hidden}
+.sidebar{width:340px;background:#0f172a;border-right:1px solid #1e293b;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;flex-shrink:0;-webkit-overflow-scrolling:touch}
+.sidebar-section{padding:14px;border-bottom:1px solid #1e293b}
+.section-title{font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.risk-gauge-container{display:flex;flex-direction:column;align-items:center;padding:4px 0}
+.risk-gauge{width:220px;height:110px;position:relative}
+.gauge-bg{width:220px;height:110px;border-radius:110px 110px 0 0;background:conic-gradient(from 180deg at 50% 100%,#22c55e 0deg 60deg,#eab308 60deg 120deg,#f97316 120deg 150deg,#dc2626 150deg 180deg);position:relative;mask:radial-gradient(circle at 50% 100%,transparent 55%,black 56%);-webkit-mask:radial-gradient(circle at 50% 100%,transparent 55%,black 56%)}
+.gauge-needle{position:absolute;bottom:0;left:50%;width:3px;height:95px;background:#f8fafc;border-radius:2px;transform-origin:bottom center;transform:translateX(-50%) rotate(-90deg);transition:transform 1s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 0 6px rgba(248,250,252,0.4)}
+.gauge-center{position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:14px;height:14px;background:#f8fafc;border-radius:50%;box-shadow:0 0 8px rgba(248,250,252,0.3)}
+.gauge-labels{display:flex;justify-content:space-between;width:220px;margin-top:6px;font-size:9px;color:#64748b;font-weight:600}
+.gauge-value{text-align:center;margin-top:8px}
+.gauge-value .value{font-size:24px;font-weight:800;line-height:1}
+.gauge-value .label{font-size:10px;color:#94a3b8;margin-top:2px;font-weight:500}
+.fma-gauge-container{display:flex;flex-direction:column;align-items:center;padding:4px 0;margin-top:10px}
+.fma-gauge{width:160px;height:80px;position:relative}
+.fma-gauge-bg{width:160px;height:80px;border-radius:80px 80px 0 0;background:conic-gradient(from 180deg at 50% 100%,#22c55e 0deg 36deg,#84cc16 36deg 72deg,#eab308 72deg 108deg,#f97316 108deg 144deg,#dc2626 144deg 180deg);position:relative;mask:radial-gradient(circle at 50% 100%,transparent 55%,black 56%);-webkit-mask:radial-gradient(circle at 50% 100%,transparent 55%,black 56%)}
+.fma-gauge-needle{position:absolute;bottom:0;left:50%;width:2px;height:70px;background:#f8fafc;border-radius:2px;transform-origin:bottom center;transform:translateX(-50%) rotate(-90deg);transition:transform 1s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 0 4px rgba(248,250,252,0.4)}
+.fma-gauge-center{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:10px;height:10px;background:#f8fafc;border-radius:50%;box-shadow:0 0 6px rgba(248,250,252,0.3)}
+.fma-gauge-labels{display:flex;justify-content:space-between;width:160px;margin-top:4px;font-size:8px;color:#64748b;font-weight:600}
+.fma-gauge-value{text-align:center;margin-top:6px}
+.fma-gauge-value .value{font-size:18px;font-weight:800;line-height:1}
+.fma-gauge-value .label{font-size:9px;color:#94a3b8;margin-top:1px;font-weight:500}
+.legend-items{display:flex;flex-direction:column;gap:5px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:11px;padding:5px 8px;border-radius:6px;background:#1e293b}
+.legend-color{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.legend-text{color:#cbd5e1;font-weight:500}
+.muni-cards{display:flex;flex-direction:column;gap:6px}
+.muni-card{background:#1e293b;border-radius:10px;padding:12px;border:1px solid #334155;cursor:pointer;transition:all 0.2s;-webkit-touch-callout:none;user-select:none}
+.muni-card:active{transform:scale(0.98)}
+.muni-card:hover{border-color:#475569}
+.muni-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.muni-name{font-size:13px;font-weight:700;color:#f8fafc}
+.muni-risk-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase}
+.muni-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.metric{text-align:center;background:#0f172a;border-radius:5px;padding:5px 3px}
+.metric-value{font-size:11px;font-weight:700;color:#f8fafc}
+.metric-label{font-size:7px;color:#64748b;margin-top:1px;font-weight:500}
+.muni-rain-row{display:flex;align-items:center;justify-content:space-between;background:#0f172a;border-radius:5px;padding:5px 10px;margin-top:4px}
+.muni-rain-label{font-size:10px;color:#94a3b8;font-weight:500}
+.muni-rain-value{font-size:11px;font-weight:700;color:#f97316}
+.fire-summary{display:flex;gap:10px}
+.fire-stat{flex:1;background:#1e293b;border-radius:8px;padding:8px;text-align:center;border:1px solid #334155}
+.fire-stat-value{font-size:20px;font-weight:800;color:#f97316}
+.fire-stat-label{font-size:9px;color:#94a3b8;margin-top:1px;font-weight:500}
+.map-container{flex:1;position:relative;background:#0a0e17}
+#map{width:100%;height:100%}
+.map-controls{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:5px;z-index:500}
+.map-control-btn{background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:4px;-webkit-touch-callout:none;user-select:none}
+.map-control-btn:active{transform:scale(0.95)}
+.map-control-btn:hover{background:#334155;border-color:#475569}
+.map-control-btn.active{background:#2563eb;border-color:#2563eb}
+.popup-content{font-family:'Inter',sans-serif;min-width:240px}
+.popup-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
+.popup-metric{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px}
+.popup-metric-label{color:#64748b;font-weight:500}
+.popup-metric-value{font-weight:700;color:#0f172a}
+.popup-risk{margin-top:8px;padding:6px 10px;border-radius:6px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase}
+.popup-fma{margin-top:6px;padding:5px 10px;border-radius:5px;text-align:center;font-size:10px;font-weight:700}
+.loading-overlay{position:absolute;inset:0;background:rgba(10,14,23,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:14px}
+.loading-overlay.hidden{display:none}
+.spinner{width:36px;height:36px;border:3px solid #334155;border-top-color:#2563eb;border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:12px;color:#94a3b8;font-weight:500}
+.install-banner{position:fixed;bottom:0;left:0;right:0;background:#1e293b;border-top:1px solid #334155;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:3000;transform:translateY(100%);transition:transform 0.3s ease}
+.install-banner.show{transform:translateY(0)}
+.install-banner-text{font-size:13px;font-weight:600;color:#e2e8f0}
+.install-banner-sub{font-size:11px;color:#94a3b8}
+.install-btn{background:#2563eb;color:white;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+.install-close{background:none;border:none;color:#64748b;font-size:18px;cursor:pointer;margin-left:8px}
+.offline-badge{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#dc2626;color:white;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;z-index:2500;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.offline-badge.show{opacity:1}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-track{background:transparent}
+.sidebar::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}
+@media(max-width:900px){.sidebar{width:300px}}
+@media(max-width:768px){.main-content{flex-direction:column}.sidebar{width:100%;height:48%;border-right:none;border-bottom:1px solid #1e293b;order:2}.map-container{order:1;height:52%}.header{padding:8px 12px}.last-update{display:none}}
+@media(max-width:480px){.header-title span{display:none}.header-title h1{font-size:12px}}
+html,body{overscroll-behavior-y:none}
+</style>
+<base target="_blank">
+</head>
+<body>
+<div class="offline-badge" id="offlineBadge">Sem conexao - Dados em cache</div>
+<div class="install-banner" id="installBanner">
+<div><div class="install-banner-text">Instalar Riscos no combate a incendios</div><div class="install-banner-sub">Acesse offline na sua tela inicial</div></div>
+<div style="display:flex;align-items:center"><button class="install-btn" id="installBtn">Instalar</button><button class="install-close" id="installClose">x</button></div>
+</div>
+<div id="app">
+<div class="header">
+<div class="header-left"><div class="header-icon">&#128293;</div><div class="header-title"><h1>Riscos no combate a incendios</h1><span>Parque Estadual Serra do Brigadeiro - 8 Municipios</span></div></div>
+<div class="header-right"><div class="last-update" id="lastUpdate">Atualizando...</div><button class="refresh-btn" id="refreshBtn" onclick="loadAllData()">Atualizar</button></div>
+</div>
+<div class="main-content">
+<div class="sidebar">
+<div class="sidebar-section"><div class="section-title">Risco no Combate a Incendios</div>
+<div class="risk-gauge-container"><div class="risk-gauge"><div class="gauge-bg"></div><div class="gauge-needle" id="gaugeNeedle"></div><div class="gauge-center"></div></div>
+<div class="gauge-labels"><span>BAIXO</span><span>MEDIO</span><span>ALTO</span><span>EXTREMO</span></div>
+<div class="gauge-value"><div class="value" id="gaugeValue" style="color:#22c55e">0%</div><div class="label" id="gaugeLabel">Calculando...</div></div>
+</div></div>
+<div class="sidebar-section"><div class="section-title">Risco de Incendios (FMA Monte Alegre)</div>
+<div class="fma-gauge-container"><div class="fma-gauge"><div class="fma-gauge-bg"></div><div class="fma-gauge-needle" id="fmaGaugeNeedle"></div><div class="fma-gauge-center"></div></div>
+<div class="fma-gauge-labels"><span>NULO</span><span>PEQ</span><span>MED</span><span>ALT</span><span>MUITO ALT</span></div>
+<div class="fma-gauge-value"><div class="value" id="fmaGaugeValue" style="color:#22c55e">0.0</div><div class="label" id="fmaGaugeLabel">FMA Calculando...</div></div>
+</div>
+<div class="legend-items" style="margin-top:10px">
+<div class="legend-item"><div class="legend-color" style="background:#22c55e"></div><span class="legend-text">Nulo (&lt;=1.0)</span></div>
+<div class="legend-item"><div class="legend-color" style="background:#84cc16"></div><span class="legend-text">Pequeno (1.1-3.0)</span></div>
+<div class="legend-item"><div class="legend-color" style="background:#eab308"></div><span class="legend-text">Medio (3.1-8.0)</span></div>
+<div class="legend-item"><div class="legend-color" style="background:#f97316"></div><span class="legend-text">Alto (8.1-24.0)</span></div>
+<div class="legend-item"><div class="legend-color" style="background:#dc2626"></div><span class="legend-text">Muito Alto (&gt;24.0)</span></div>
+</div></div>
+<div class="sidebar-section"><div class="section-title">Legenda Risco de Combate</div>
+<div class="legend-items">
+<div class="legend-item"><div class="legend-color" style="background:#22c55e"></div><span class="legend-text">Baixo - Condicoes favoraveis</span></div>
+<div class="legend-item"><div class="legend-color" style="background:#eab308"></div><span class="legend-text">Medio - Atencao necessaria</span></div>
+<div class="legend-item"><div class="legend-color" style="background:#f97316"></div><span class="legend-text">Alto - Risco elevado</span></div>
+<div class="legend-item"><div class="legend-color" style="background:#dc2626"></div><span class="legend-text">Extremo - Combate perigoso</span></div>
+</div></div>
+<div class="sidebar-section"><div class="section-title">Municipios Monitorados</div><div class="muni-cards" id="muniCards"></div></div>
+<div class="sidebar-section"><div class="section-title">Focos de Calor (FIRMS)</div>
+<div class="fire-summary"><div class="fire-stat"><div class="fire-stat-value" id="fireCount">-</div><div class="fire-stat-label">Focos Detectados</div></div><div class="fire-stat"><div class="fire-stat-value" id="fireFrp">-</div><div class="fire-stat-label">FRP Medio (MW)</div></div></div>
+<div style="margin-top:10px;font-size:10px;color:#64748b;text-align:center">Dados MODIS/VIIRS - NASA FIRMS</div>
+</div></div>
+<div class="map-container">
+<div id="map"></div>
+<div class="map-controls">
+<button class="map-control-btn active" id="btnStreet" onclick="setMapLayer('street')">Ruas</button>
+<button class="map-control-btn" id="btnSat" onclick="setMapLayer('satellite')">Satelite</button>
+<button class="map-control-btn" id="btnTopo" onclick="setMapLayer('topo')">Topografico</button>
+</div>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div class="loading-text" id="loadingText">Carregando dados meteorologicos...</div></div>
+</div></div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+
+if('serviceWorker' in navigator){
+  var swCode = [
+    "const CACHE_NAME='risco-incendio-v6';",
+    "const urlsToCache=['./','https://unpkg.com/leaflet@1.9.4/dist/leaflet.css','https://unpkg.com/leaflet@1.9.4/dist/leaflet.js','https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'];",
+    "self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(urlsToCache)));self.skipWaiting();});",
+    "self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim());});",
+    "self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>{if(r)return r;return fetch(e.request).catch(()=>{if(e.request.url.includes('tile'))return new Response('',{status:204});});}));});"
+  ].join("");
+  var swBlob = new Blob([swCode],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(swBlob)).then(r=>console.log('SW ok')).catch(e=>console.log('SW fail',e));
+}
+
+var deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredPrompt=e;document.getElementById('installBanner').classList.add('show');});
+document.getElementById('installBtn').addEventListener('click',async function(){if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;}document.getElementById('installBanner').classList.remove('show');deferredPrompt=null;});
+document.getElementById('installClose').addEventListener('click',function(){document.getElementById('installBanner').classList.remove('show');});
+
+function updateOnlineStatus(){document.getElementById('offlineBadge').classList.toggle('show',!navigator.onLine);}
+window.addEventListener('online',updateOnlineStatus);
+window.addEventListener('offline',updateOnlineStatus);
+updateOnlineStatus();
+
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+var MUNICIPIOS=[
+  {nome:'Araponga',lat:-20.6706,lon:-42.5131},
+  {nome:'Divino',lat:-20.6144,lon:-42.1486},
+  {nome:'Ervália',lat:-20.8403,lon:-42.6522},
+  {nome:'Fervedouro',lat:-20.7277,lon:-42.2790},
+  {nome:'Miradouro',lat:-20.8908,lon:-42.3428},
+  {nome:'Muriaé',lat:-21.1306,lon:-42.3664},
+  {nome:'Pedra Bonita',lat:-20.5208,lon:-42.3300},
+  {nome:'Sericita',lat:-20.4733,lon:-42.4817}
+];
+
+var MAP_KEY='e4885bf7243f30d6f28a805f4d70daea';
+var map,markers={},fireMarkers=[],currentLayer='street';
+var weatherData={};
+var fireData=[];
+
+function calcularRisco(temp,umidade,vento){
+  var risco=0;
+  if(umidade<30){risco+=35;}
+  else if(umidade<50){risco+=20;}
+  else if(umidade<70){risco+=10;}
+  if(temp>30){risco+=35;}
+  else if(temp>25){risco+=20;}
+  else if(temp>20){risco+=10;}
+  if(vento>30){risco+=30;}
+  else if(vento>20){risco+=15;}
+  else if(vento>10){risco+=5;}
+  if(umidade<30&&temp>30&&vento>30)risco=100;
+  return Math.min(risco,100);
+}
+
+function getRiskColor(risco){
+  if(risco>=85)return{bg:'#dc2626',text:'#fff',label:'EXTREMO'};
+  if(risco>=60)return{bg:'#f97316',text:'#fff',label:'ALTO'};
+  if(risco>=35)return{bg:'#eab308',text:'#000',label:'MEDIO'};
+  return{bg:'#22c55e',text:'#fff',label:'BAIXO'};
+}
+
+function getRiskSize(risco){
+  if(risco>=85)return 28;
+  if(risco>=60)return 24;
+  if(risco>=35)return 20;
+  return 16;
+}
+
+function calcularFMA(ur13h,chuva24h,fmaOntem){
+  var y;
+  if(ur13h>=85)y=0.0;
+  else if(ur13h>=55)y=(100.0-ur13h)/10.0;
+  else if(ur13h>=30)y=(100.0-ur13h)/5.0;
+  else y=(100.0-ur13h)/2.5;
+  var fmaHoje;
+  if(chuva24h<=2.4)fmaHoje=fmaOntem+y;
+  else if(chuva24h<=4.9)fmaHoje=Math.max(0.0,fmaOntem-chuva24h)+y;
+  else if(chuva24h<=9.9)fmaHoje=(fmaOntem*0.7)+y;
+  else fmaHoje=y;
+  var classe;
+  if(fmaHoje<=1.0)classe='Nulo';
+  else if(fmaHoje<=3.0)classe='Pequeno';
+  else if(fmaHoje<=8.0)classe='Medio';
+  else if(fmaHoje<=24.0)classe='Alto';
+  else classe='Muito Alto';
+  return{fma:Math.round(fmaHoje*100)/100,classe:classe};
+}
+
+function getFMAColor(classe){
+  switch(classe){
+    case'Nulo':return{bg:'#22c55e',text:'#fff'};
+    case'Pequeno':return{bg:'#84cc16',text:'#000'};
+    case'Medio':return{bg:'#eab308',text:'#000'};
+    case'Alto':return{bg:'#f97316',text:'#fff'};
+    case'Muito Alto':return{bg:'#dc2626',text:'#fff'};
+    default:return{bg:'#64748b',text:'#fff'};
+  }
+}
+
+function contarDiasSemChuva(precipHistory){
+  var dias=0;
+  for(var i=0;i<precipHistory.length;i++){
+    if(precipHistory[i]<2.5)dias++;
+    else break;
+  }
+  return dias;
+}
+
+function getYesterday(){
+  var d=new Date();d.setDate(d.getDate()-1);
+  return d.toISOString().split('T')[0];
+}
+
+function initMap(){
+  var centerLat=MUNICIPIOS.reduce(function(s,m){return s+m.lat;},0)/MUNICIPIOS.length;
+  var centerLon=MUNICIPIOS.reduce(function(s,m){return s+m.lon;},0)/MUNICIPIOS.length;
+  map=L.map('map',{zoomControl:true,attributionControl:false}).setView([centerLat,centerLon],10);
+  window.layers={
+    street:L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'OSM'}),
+    satellite:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'}),
+    topo:L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'OTM'})
+  };
+  window.layers.street.addTo(map);
+  MUNICIPIOS.forEach(function(m){markers[m.nome]=L.marker([m.lat,m.lon]).addTo(map);});
+  L.polygon([[-20.45,-42.65],[-20.45,-42.15],[-21.25,-42.15],[-21.25,-42.65]],{color:'#2563eb',weight:2,fillColor:'#2563eb',fillOpacity:0.05,dashArray:'8,6'}).addTo(map);
+  L.marker([-20.85,-42.40],{opacity:0.7}).bindPopup('<b>Parque Estadual Serra do Brigadeiro</b><br>UC de Protecao Integral').addTo(map);
+}
+
+function setMapLayer(type){
+  Object.values(window.layers).forEach(function(l){map.removeLayer(l);});
+  window.layers[type].addTo(map);
+  document.querySelectorAll('.map-control-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById(type==='street'?'btnStreet':type==='satellite'?'btnSat':'btnTopo').classList.add('active');
+  currentLayer=type;
+}
+
+function createWindIcon(direction,risco){
+  var size=getRiskSize(risco);
+  var c=getRiskColor(risco);
+  var rot=direction||0;
+  var svgSize=Math.round(size*0.5);
+  return L.divIcon({
+    className:'wind-marker',
+    html:'<div style="width:'+size+'px;height:'+size+'px;background:'+c.bg+';border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;transform:rotate('+rot+'deg);transition:all 0.5s;"><svg width="'+svgSize+'" height="'+svgSize+'" viewBox="0 0 24 24"><path d="M12 2L12 22M12 2L6 8M12 2L18 8" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>',
+    iconSize:[size,size],iconAnchor:[size/2,size/2]
+  });
+}
+
+async function fetchOpenMeteo(lat,lon,nome){
+  if(!navigator.onLine){
+    var cached=lsGet('weather_'+nome);
+    if(cached)return cached;
+    return null;
+  }
+  var url='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&hourly=relative_humidity_2m&daily=precipitation_sum&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m&timezone=America/Sao_Paulo&forecast_days=7';
+  try{
+    var res=await fetch(url);
+    var data=await res.json();
+    var ur13h=data.hourly.relative_humidity_2m[13];
+    var chuva24h=data.daily.precipitation_sum[0];
+    var rainHistory=data.daily.precipitation_sum;
+    var diasSemChuva=contarDiasSemChuva(rainHistory);
+    var today=new Date().toISOString().split('T')[0];
+    var cacheKey='fma_'+nome;
+    var cachedFMA=lsGet(cacheKey);
+    var fmaOntem=0;
+    if(cachedFMA&&cachedFMA.date===getYesterday())fmaOntem=cachedFMA.fma;
+    var fmaResult=calcularFMA(ur13h,chuva24h,fmaOntem);
+    lsSet(cacheKey,{date:today,fma:fmaResult.fma});
+    var result={
+      temp:data.current.temperature_2m,
+      umidade:data.current.relative_humidity_2m,
+      vento:data.current.wind_speed_10m,
+      ventoDir:data.current.wind_direction_10m,
+      ur13h:ur13h,
+      chuva24h:chuva24h,
+      diasSemChuva:diasSemChuva,
+      fma:fmaResult.fma,
+      fmaClasse:fmaResult.classe
+    };
+    lsSet('weather_'+nome,result);
+    return result;
+  }catch(e){
+    console.error('Open-Meteo error:',e);
+    return lsGet('weather_'+nome);
+  }
+}
+
+async function fetchFIRMS(){
+  if(!navigator.onLine)return lsGet('firms_data')||[];
+  var url='https://firms.modaps.eosdis.nasa.gov/api/area/csv/'+MAP_KEY+'/VIIRS_NOAA20_NRT/-42.7,-21.3,-42.1,-20.4/1';
+  try{
+    var res=await fetch(url);
+    var text=await res.text();
+    var lines=text.trim().split('\n');
+    if(lines.length<2)return[];
+    var headers=lines[0].split(',');
+    var latIdx=headers.indexOf('latitude');
+    var lonIdx=headers.indexOf('longitude');
+    var frpIdx=headers.indexOf('frp');
+    var confIdx=headers.indexOf('confidence');
+    var fires=[];
+    for(var i=1;i<lines.length;i++){
+      var cols=lines[i].split(',');
+      if(cols.length>Math.max(latIdx,lonIdx)){
+        fires.push({lat:parseFloat(cols[latIdx]),lon:parseFloat(cols[lonIdx]),frp:parseFloat(cols[frpIdx])||0,confidence:cols[confIdx]||'n/a'});
+      }
+    }
+    lsSet('firms_data',fires);
+    return fires;
+  }catch(e){
+    console.error('FIRMS error:',e);
+    return lsGet('firms_data')||[];
+  }
+}
+
+function updateGauge(riscoMedio){
+  var needle=document.getElementById('gaugeNeedle');
+  var valueEl=document.getElementById('gaugeValue');
+  var labelEl=document.getElementById('gaugeLabel');
+  var angle=-90+(riscoMedio/100)*180;
+  needle.style.transform='translateX(-50%) rotate('+angle+'deg)';
+  valueEl.textContent=Math.round(riscoMedio)+'%';
+  var c=getRiskColor(riscoMedio);
+  valueEl.style.color=c.bg;
+  labelEl.textContent='Risco '+c.label;
+  labelEl.style.color=c.bg;
+}
+
+function updateFMAGauge(fmaMedio){
+  var needle=document.getElementById('fmaGaugeNeedle');
+  var valueEl=document.getElementById('fmaGaugeValue');
+  var labelEl=document.getElementById('fmaGaugeLabel');
+  var pct=Math.min(100,(fmaMedio/30)*100);
+  var angle=-90+(pct/100)*180;
+  needle.style.transform='translateX(-50%) rotate('+angle+'deg)';
+  valueEl.textContent=fmaMedio.toFixed(1);
+  var c=getFMAColor(fmaMedio<=1?'Nulo':fmaMedio<=3?'Pequeno':fmaMedio<=8?'Medio':fmaMedio<=24?'Alto':'Muito Alto');
+  valueEl.style.color=c.bg;
+  var classeText=fmaMedio<=1?'Nulo':fmaMedio<=3?'Pequeno':fmaMedio<=8?'Medio':fmaMedio<=24?'Alto':'Muito Alto';
+  labelEl.textContent='FMA '+classeText;
+  labelEl.style.color=c.bg;
+}
+
+function updateMuniCards(){
+  var container=document.getElementById('muniCards');
+  container.innerHTML='';
+  MUNICIPIOS.forEach(function(m){
+    var d=weatherData[m.nome];
+    if(!d)return;
+    var risco=calcularRisco(d.temp,d.umidade,d.vento);
+    var c=getRiskColor(risco);
+    var card=document.createElement('div');
+    card.className='muni-card';
+    card.innerHTML=
+      '<div class="muni-card-header">'+
+        '<span class="muni-name">'+m.nome+'</span>'+
+        '<span class="muni-risk-badge" style="background:'+c.bg+';color:'+c.text+'">'+c.label+'</span>'+
+      '</div>'+
+      '<div class="muni-metrics">'+
+        '<div class="metric"><div class="metric-value" style="color:'+(d.temp>30?'#f97316':'#e2e8f0')+'">'+d.temp.toFixed(1)+'C</div><div class="metric-label">Temp</div></div>'+
+        '<div class="metric"><div class="metric-value" style="color:'+(d.umidade<30?'#dc2626':'#e2e8f0')+'">'+d.umidade+'%</div><div class="metric-label">Umidade</div></div>'+
+        '<div class="metric"><div class="metric-value" style="color:'+(d.vento>30?'#dc2626':'#e2e8f0')+'">'+d.vento.toFixed(1)+'</div><div class="metric-label">Vento</div></div>'+
+        '<div class="metric"><div class="metric-value" style="color:#f97316">'+d.diasSemChuva+'</div><div class="metric-label">Dias secos</div></div>'+
+      '</div>'+
+      '<div class="muni-rain-row">'+
+        '<span class="muni-rain-label">Dias sem chuva significativa</span>'+
+        '<span class="muni-rain-value">'+d.diasSemChuva+' dias</span>'+
+      '</div>';
+    card.onclick=function(){map.setView([m.lat,m.lon],13);markers[m.nome].openPopup();};
+    container.appendChild(card);
+  });
+}
+
+function updateMapMarkers(){
+  MUNICIPIOS.forEach(function(m){
+    var d=weatherData[m.nome];
+    if(!d)return;
+    var risco=calcularRisco(d.temp,d.umidade,d.vento);
+    var rc=getRiskColor(risco);
+    var icon=createWindIcon(d.ventoDir,risco);
+    var marker=markers[m.nome];
+    marker.setIcon(icon);
+    var fmaC=getFMAColor(d.fmaClasse);
+    marker.setPopupContent(
+      '<div class="popup-content">'+
+      '<div class="popup-title">'+m.nome+'</div>'+
+      '<div class="popup-metric"><span class="popup-metric-label">Temperatura</span><span class="popup-metric-value">'+d.temp.toFixed(1)+' C</span></div>'+
+      '<div class="popup-metric"><span class="popup-metric-label">Umidade</span><span class="popup-metric-value">'+d.umidade+'%</span></div>'+
+      '<div class="popup-metric"><span class="popup-metric-label">Vento</span><span class="popup-metric-value">'+d.vento.toFixed(1)+' km/h</span></div>'+
+      '<div class="popup-metric"><span class="popup-metric-label">Direcao</span><span class="popup-metric-value">'+d.ventoDir+'</span></div>'+
+      '<div class="popup-metric"><span class="popup-metric-label">Chuva 24h</span><span class="popup-metric-value">'+d.chuva24h.toFixed(1)+' mm</span></div>'+
+      '<div class="popup-metric"><span class="popup-metric-label">Sem chuva</span><span class="popup-metric-value">'+d.diasSemChuva+' dias</span></div>'+
+      '<div class="popup-risk" style="background:'+rc.bg+';color:'+rc.text+'">RISCO COMBATE: '+rc.label+' - '+Math.round(risco)+'%</div>'+
+      '<div class="popup-fma" style="background:'+fmaC.bg+';color:'+fmaC.text+'">FMA Monte Alegre: '+d.fma+' ('+d.fmaClasse+')</div>'+
+      '</div>'
+    );
+  });
+}
+
+function updateFireMarkers(){
+  fireMarkers.forEach(function(m){map.removeLayer(m);});
+  fireMarkers=[];
+  fireData.forEach(function(f){
+    var radius=Math.max(4,Math.min(14,f.frp/2));
+    var marker=L.circleMarker([f.lat,f.lon],{radius:radius,fillColor:'#f97316',color:'#dc2626',weight:1.5,fillOpacity:0.7}).addTo(map);
+    marker.bindPopup('<div class="popup-content"><div class="popup-title">Foco de Calor Detectado</div><div class="popup-metric"><span class="popup-metric-label">Lat/Lon</span><span class="popup-metric-value">'+f.lat.toFixed(4)+', '+f.lon.toFixed(4)+'</span></div><div class="popup-metric"><span class="popup-metric-label">FRP</span><span class="popup-metric-value">'+f.frp.toFixed(1)+' MW</span></div><div class="popup-metric"><span class="popup-metric-label">Confianca</span><span class="popup-metric-value">'+f.confidence+'</span></div></div>');
+    fireMarkers.push(marker);
+  });
+  document.getElementById('fireCount').textContent=fireData.length;
+  var avgFrp=fireData.length>0?(fireData.reduce(function(s,f){return s+f.frp;},0)/fireData.length).toFixed(1):'0.0';
+  document.getElementById('fireFrp').textContent=avgFrp;
+}
+
+async function loadAllData(){
+  var btn=document.getElementById('refreshBtn');
+  var overlay=document.getElementById('loadingOverlay');
+  var loadingText=document.getElementById('loadingText');
+  btn.classList.add('loading');
+  overlay.classList.remove('hidden');
+  loadingText.textContent='Carregando dados meteorologicos...';
+  var promises=MUNICIPIOS.map(function(m){
+    return fetchOpenMeteo(m.lat,m.lon,m.nome).then(function(data){if(data)weatherData[m.nome]=data;});
+  });
+  await Promise.all(promises);
+  loadingText.textContent='Buscando focos de calor...';
+  fireData=await fetchFIRMS();
+  loadingText.textContent='Atualizando interface...';
+  var totalRisco=0,totalFMA=0,count=0;
+  MUNICIPIOS.forEach(function(m){
+    var d=weatherData[m.nome];
+    if(d){totalRisco+=calcularRisco(d.temp,d.umidade,d.vento);totalFMA+=d.fma;count++;}
+  });
+  var riscoMedio=count>0?totalRisco/count:0;
+  var fmaMedio=count>0?totalFMA/count:0;
+  updateGauge(riscoMedio);
+  updateFMAGauge(fmaMedio);
+  updateMuniCards();
+  updateMapMarkers();
+  updateFireMarkers();
+  var now=new Date();
+  document.getElementById('lastUpdate').textContent='Atualizado: '+now.toLocaleDateString('pt-BR')+' '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  overlay.classList.add('hidden');
+  btn.classList.remove('loading');
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  initMap();
+  loadAllData();
+  setInterval(loadAllData,600000);
+});
+</script>
+</body>
+</html>
