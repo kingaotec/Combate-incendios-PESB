@@ -43,19 +43,29 @@ body{font-family:'Inter',sans-serif;background:#0a0e17;color:#e2e8f0;overflow:hi
 .gauge-value{text-align:center;margin-top:8px}
 .gauge-value .value{font-size:24px;font-weight:800;line-height:1}
 .gauge-value .label{font-size:10px;color:#94a3b8;margin-top:2px;font-weight:500}
+
+/* FMA GAUGE: AZUL -> VERDE -> AMARELO -> LARANJA -> VERMELHO */
 .fma-gauge-container{display:flex;flex-direction:column;align-items:center;padding:4px 0;margin-top:10px}
 .fma-gauge{width:160px;height:80px;position:relative}
-.fma-gauge-bg{width:160px;height:80px;border-radius:80px 80px 0 0;background:conic-gradient(from 180deg at 50% 100%,#22c55e 0deg 36deg,#84cc16 36deg 72deg,#eab308 72deg 108deg,#f97316 108deg 144deg,#dc2626 144deg 180deg);position:relative;mask:radial-gradient(circle at 50% 100%,transparent 55%,black 56%);-webkit-mask:radial-gradient(circle at 50% 100%,transparent 55%,black 56%)}
+.fma-gauge-bg{width:160px;height:80px;border-radius:80px 80px 0 0;background:conic-gradient(from 180deg at 50% 100%,#2563eb 0deg 36deg,#22c55e 36deg 72deg,#eab308 72deg 108deg,#f97316 108deg 144deg,#dc2626 144deg 180deg);position:relative;mask:radial-gradient(circle at 50% 100%,transparent 55%,black 56%);-webkit-mask:radial-gradient(circle at 50% 100%,transparent 55%,black 56%)}
 .fma-gauge-needle{position:absolute;bottom:0;left:50%;width:2px;height:70px;background:#f8fafc;border-radius:2px;transform-origin:bottom center;transform:translateX(-50%) rotate(-90deg);transition:transform 1s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 0 4px rgba(248,250,252,0.4)}
 .fma-gauge-center{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:10px;height:10px;background:#f8fafc;border-radius:50%;box-shadow:0 0 6px rgba(248,250,252,0.3)}
 .fma-gauge-labels{display:flex;justify-content:space-between;width:160px;margin-top:4px;font-size:8px;color:#64748b;font-weight:600}
 .fma-gauge-value{text-align:center;margin-top:6px}
 .fma-gauge-value .value{font-size:18px;font-weight:800;line-height:1}
 .fma-gauge-value .label{font-size:9px;color:#94a3b8;margin-top:1px;font-weight:500}
-.legend-items{display:flex;flex-direction:column;gap:5px}
+
+/* LEGENDA COLAPSAVEL */
+.legend-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:6px 0;margin-top:8px;border-top:1px solid #1e293b;-webkit-touch-callout:none;user-select:none}
+.legend-toggle-text{font-size:11px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}
+.legend-toggle-icon{font-size:14px;color:#64748b;transition:transform 0.3s ease}
+.legend-toggle.open .legend-toggle-icon{transform:rotate(180deg)}
+.legend-items{display:flex;flex-direction:column;gap:5px;max-height:0;overflow:hidden;transition:max-height 0.35s ease,opacity 0.3s ease;opacity:0}
+.legend-items.open{max-height:300px;opacity:1;margin-top:8px}
 .legend-item{display:flex;align-items:center;gap:8px;font-size:11px;padding:5px 8px;border-radius:6px;background:#1e293b}
 .legend-color{width:12px;height:12px;border-radius:3px;flex-shrink:0}
 .legend-text{color:#cbd5e1;font-weight:500}
+
 .muni-cards{display:flex;flex-direction:column;gap:6px}
 .muni-card{background:#1e293b;border-radius:10px;padding:12px;border:1px solid #334155;cursor:pointer;transition:all 0.2s;-webkit-touch-callout:none;user-select:none}
 .muni-card:active{transform:scale(0.98)}
@@ -110,6 +120,7 @@ body{font-family:'Inter',sans-serif;background:#0a0e17;color:#e2e8f0;overflow:hi
 html,body{overscroll-behavior-y:none}
 </style>
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 <div class="offline-badge" id="offlineBadge">Sem conexao - Dados em cache</div>
@@ -124,35 +135,51 @@ html,body{overscroll-behavior-y:none}
 </div>
 <div class="main-content">
 <div class="sidebar">
-<div class="sidebar-section"><div class="section-title">Risco no Combate a Incendios</div>
-<div class="risk-gauge-container"><div class="risk-gauge"><div class="gauge-bg"></div><div class="gauge-needle" id="gaugeNeedle"></div><div class="gauge-center"></div></div>
-<div class="gauge-labels"><span>BAIXO</span><span>MEDIO</span><span>ALTO</span><span>EXTREMO</span></div>
-<div class="gauge-value"><div class="value" id="gaugeValue" style="color:#22c55e">0%</div><div class="label" id="gaugeLabel">Calculando...</div></div>
-</div></div>
-<div class="sidebar-section"><div class="section-title">Risco de Incendios (FMA Monte Alegre)</div>
+
+<!-- 1. RISCO NO COMBATE A INCENDIOS + LEGENDA COLAPSAVEL -->
+<div class="sidebar-section">
+  <div class="section-title">Risco no Combate a Incendios</div>
+  <div class="risk-gauge-container">
+    <div class="risk-gauge"><div class="gauge-bg"></div><div class="gauge-needle" id="gaugeNeedle"></div><div class="gauge-center"></div></div>
+    <div class="gauge-labels"><span>BAIXO</span><span>MEDIO</span><span>ALTO</span><span>EXTREMO</span></div>
+    <div class="gauge-value"><div class="value" id="gaugeValue" style="color:#22c55e">0%</div><div class="label" id="gaugeLabel">Calculando...</div></div>
+  </div>
+  <div class="legend-toggle" id="legendToggle" onclick="toggleLegend()">
+    <span class="legend-toggle-text">Legenda Risco de Combate</span>
+    <span class="legend-toggle-icon" id="legendToggleIcon">&#9662;</span>
+  </div>
+  <div class="legend-items" id="legendItems">
+    <div class="legend-item"><div class="legend-color" style="background:#22c55e"></div><span class="legend-text">Baixo - Condicoes favoraveis</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#eab308"></div><span class="legend-text">Medio - Atencao necessaria</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#f97316"></div><span class="legend-text">Alto - Risco elevado</span></div>
+    <div class="legend-item"><div class="legend-color" style="background:#dc2626"></div><span class="legend-text">Extremo - Combate perigoso</span></div>
+  </div>
+</div>
+
+<!-- 2. FOCOS DE CALOR (FIRMS) -->
+<div class="sidebar-section"><div class="section-title">Focos de Calor (FIRMS)</div>
+<div class="fire-summary"><div class="fire-stat"><div class="fire-stat-value" id="fireCount">-</div><div class="fire-stat-label">Focos Detectados</div></div><div class="fire-stat"><div class="fire-stat-value" id="fireFrp">-</div><div class="fire-stat-label">FRP Medio (MW)</div></div></div>
+<div style="margin-top:10px;font-size:10px;color:#64748b;text-align:center">Dados MODIS/VIIRS - NASA FIRMS</div>
+</div>
+
+<!-- 3. RISCO DE INCENDIOS (FMA) -->
+<div class="sidebar-section"><div class="section-title">Risco de Incendios (FMA)</div>
 <div class="fma-gauge-container"><div class="fma-gauge"><div class="fma-gauge-bg"></div><div class="fma-gauge-needle" id="fmaGaugeNeedle"></div><div class="fma-gauge-center"></div></div>
 <div class="fma-gauge-labels"><span>NULO</span><span>PEQ</span><span>MED</span><span>ALT</span><span>MUITO ALT</span></div>
-<div class="fma-gauge-value"><div class="value" id="fmaGaugeValue" style="color:#22c55e">0.0</div><div class="label" id="fmaGaugeLabel">FMA Calculando...</div></div>
+<div class="fma-gauge-value"><div class="value" id="fmaGaugeValue" style="color:#2563eb">0.0</div><div class="label" id="fmaGaugeLabel">FMA Calculando...</div></div>
 </div>
 <div class="legend-items" style="margin-top:10px">
-<div class="legend-item"><div class="legend-color" style="background:#22c55e"></div><span class="legend-text">Nulo (&lt;=1.0)</span></div>
-<div class="legend-item"><div class="legend-color" style="background:#84cc16"></div><span class="legend-text">Pequeno (1.1-3.0)</span></div>
+<div class="legend-item"><div class="legend-color" style="background:#2563eb"></div><span class="legend-text">Nulo (&lt;=1.0)</span></div>
+<div class="legend-item"><div class="legend-color" style="background:#22c55e"></div><span class="legend-text">Pequeno (1.1-3.0)</span></div>
 <div class="legend-item"><div class="legend-color" style="background:#eab308"></div><span class="legend-text">Medio (3.1-8.0)</span></div>
 <div class="legend-item"><div class="legend-color" style="background:#f97316"></div><span class="legend-text">Alto (8.1-24.0)</span></div>
 <div class="legend-item"><div class="legend-color" style="background:#dc2626"></div><span class="legend-text">Muito Alto (&gt;24.0)</span></div>
 </div></div>
-<div class="sidebar-section"><div class="section-title">Legenda Risco de Combate</div>
-<div class="legend-items">
-<div class="legend-item"><div class="legend-color" style="background:#22c55e"></div><span class="legend-text">Baixo - Condicoes favoraveis</span></div>
-<div class="legend-item"><div class="legend-color" style="background:#eab308"></div><span class="legend-text">Medio - Atencao necessaria</span></div>
-<div class="legend-item"><div class="legend-color" style="background:#f97316"></div><span class="legend-text">Alto - Risco elevado</span></div>
-<div class="legend-item"><div class="legend-color" style="background:#dc2626"></div><span class="legend-text">Extremo - Combate perigoso</span></div>
-</div></div>
+
+<!-- 4. MUNICIPIOS -->
 <div class="sidebar-section"><div class="section-title">Municipios Monitorados</div><div class="muni-cards" id="muniCards"></div></div>
-<div class="sidebar-section"><div class="section-title">Focos de Calor (FIRMS)</div>
-<div class="fire-summary"><div class="fire-stat"><div class="fire-stat-value" id="fireCount">-</div><div class="fire-stat-label">Focos Detectados</div></div><div class="fire-stat"><div class="fire-stat-value" id="fireFrp">-</div><div class="fire-stat-label">FRP Medio (MW)</div></div></div>
-<div style="margin-top:10px;font-size:10px;color:#64748b;text-align:center">Dados MODIS/VIIRS - NASA FIRMS</div>
-</div></div>
+
+</div>
 <div class="map-container">
 <div id="map"></div>
 <div class="map-controls">
@@ -167,7 +194,7 @@ html,body{overscroll-behavior-y:none}
 
 if('serviceWorker' in navigator){
   var swCode = [
-    "const CACHE_NAME='risco-incendio-v6';",
+    "const CACHE_NAME='risco-incendio-v8';",
     "const urlsToCache=['./','https://unpkg.com/leaflet@1.9.4/dist/leaflet.css','https://unpkg.com/leaflet@1.9.4/dist/leaflet.js','https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap'];",
     "self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(urlsToCache)));self.skipWaiting();});",
     "self.addEventListener('activate',e=>{e.waitUntil(self.clients.claim());});",
@@ -255,10 +282,11 @@ function calcularFMA(ur13h,chuva24h,fmaOntem){
   return{fma:Math.round(fmaHoje*100)/100,classe:classe};
 }
 
+// CORES FMA: AZUL -> VERDE -> AMARELO -> LARANJA -> VERMELHO
 function getFMAColor(classe){
   switch(classe){
-    case'Nulo':return{bg:'#22c55e',text:'#fff'};
-    case'Pequeno':return{bg:'#84cc16',text:'#000'};
+    case'Nulo':return{bg:'#2563eb',text:'#fff'};
+    case'Pequeno':return{bg:'#22c55e',text:'#fff'};
     case'Medio':return{bg:'#eab308',text:'#000'};
     case'Alto':return{bg:'#f97316',text:'#fff'};
     case'Muito Alto':return{bg:'#dc2626',text:'#fff'};
@@ -409,6 +437,19 @@ function updateFMAGauge(fmaMedio){
   var classeText=fmaMedio<=1?'Nulo':fmaMedio<=3?'Pequeno':fmaMedio<=8?'Medio':fmaMedio<=24?'Alto':'Muito Alto';
   labelEl.textContent='FMA '+classeText;
   labelEl.style.color=c.bg;
+}
+
+function toggleLegend(){
+  var toggle=document.getElementById('legendToggle');
+  var items=document.getElementById('legendItems');
+  var isOpen=items.classList.contains('open');
+  if(isOpen){
+    items.classList.remove('open');
+    toggle.classList.remove('open');
+  }else{
+    items.classList.add('open');
+    toggle.classList.add('open');
+  }
 }
 
 function updateMuniCards(){
