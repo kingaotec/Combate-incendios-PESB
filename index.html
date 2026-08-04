@@ -1165,7 +1165,13 @@ async function fetchOpenMeteo(lat,lon,nome){
   try{
     var res=await fetch(url);
     var data=await res.json();
-    var ur13h=data.hourly.relative_humidity_2m[13];
+    var timeArray=data.hourly.time;
+var todayStr=new Date().toISOString().split('T')[0];
+var targetTime=todayStr+'T13:00';
+var ur13hIndex=timeArray.indexOf(targetTime);
+if(ur13hIndex===-1){targetTime=todayStr+'T13:00:00';ur13hIndex=timeArray.indexOf(targetTime);}
+if(ur13hIndex===-1){var firstTime=new Date(timeArray[0]);var targetDate=new Date(todayStr+'T13:00:00');ur13hIndex=Math.round((targetDate-firstTime)/(1000*60*60));}
+var ur13h=data.hourly.relative_humidity_2m[ur13hIndex];
     var chuva24h=data.daily.precipitation_sum[0];
     var rainHistory=data.daily.precipitation_sum;
     var diasSemChuva=contarDiasSemChuva(rainHistory);
