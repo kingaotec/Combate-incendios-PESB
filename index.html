@@ -6,11 +6,16 @@
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Monitoramento PESB">
+<meta name="apple-mobile-web-app-title" content="Monitor. PESB">
 <meta name="description" content="Monitoramento Tático de Incêndios - Serra do Brigadeiro">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Monitoramento de Incêndios no PESB</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjgwIiBmaWxsPSIjMGYxNzJhIi8+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjU2IiByPSIxODAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2RjMjYyNiIgc3Ryb2tlLXdpZHRoPSIyNCIvPjxwYXRoIGQ9Ik0yNTYgMTIwYy00MCA2MC04MCAxMjAtODAgMTgwIDAgNDQgMzYgODAgODAgODBzODAtMzYgODAtODBjMC02MC00MC0xMjAtODAtMTgweiIgZmlsbD0iI2Y5NzMxNiIvPjxwYXRoIGQ9Ik0yNTYgMTgwYy0yNSA0MC01MCA4MC01MCAxMjAgMCAyOCAyMiA1MCA1MCA1MHM1MC0yMiA1MC01MGMwLTQwLTI1LTgwLTUwLTEyMHoiIGZpbGw9IiNkYzI2MjYiLz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIzMDAiIHI9IjIwIiBmaWxsPSIjZmZmIi8+PC9zdmc+">
+
+<!-- Vínculo com o PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -28,8 +33,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-m
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh;width:100vw}
 
 .header{background:linear-gradient(135deg,var(--bg-panel) 0%,var(--bg-card) 100%);border-bottom:1px solid var(--border-color);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:1000}
-.header-left{display:flex;align-items:center;gap:10px}
-.header-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--risk-extreme),var(--risk-high));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-icon{width:42px;height:42px;background:#ffffff;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;overflow:hidden;border:1px solid var(--border-color);transition:transform 0.2s, box-shadow 0.2s;}
+.header-icon:hover{transform:scale(1.05);box-shadow:0 0 10px rgba(37,99,235,0.4)}
+.header-icon img{width:100%;height:100%;object-fit:contain;padding:2px;}
 .header-title{display:flex;flex-direction:column;min-width:0}
 .header-title h1{font-size:14px;font-weight:700;color:var(--text-light);letter-spacing:-0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .header-title span{font-size:10px;color:var(--text-muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -52,6 +59,21 @@ button.section-header.collapsed {margin-bottom:0;}
 button.section-header.collapsed .collapse-icon {transform:rotate(-90deg);}
 .section-content {transition:max-height 0.35s ease, opacity 0.3s ease;max-height:3000px;opacity:1;overflow:hidden;}
 .section-content.collapsed {max-height:0;opacity:0;}
+
+.hide-mobile-btn {
+  display: none;
+  width: 100%;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  cursor: pointer;
+  text-align: center;
+}
 
 .risk-gauge-container{display:flex;flex-direction:column;align-items:center;padding:4px 0}
 .risk-gauge{width:220px;height:110px;position:relative}
@@ -125,11 +147,69 @@ button.legend-toggle.open .legend-toggle-icon{transform:rotate(180deg)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{font-size:12px;color:var(--text-muted);font-weight:500}
 
+.image-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 23, 0.85);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  padding: 20px;
+}
+.image-modal.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.image-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 85vh;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-color);
+}
+.image-modal-content img {
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+}
+.image-modal-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  background: var(--risk-extreme);
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+.image-modal-close:hover {
+  transform: scale(1.1);
+}
+
 .sidebar::-webkit-scrollbar{width:3px}
 .sidebar::-webkit-scrollbar-track{background:transparent}
 .sidebar::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:2px}
 
-/* --- ESTILOS MOBILE --- */
 .toggle-panel-btn { display: none; }
 
 @media(max-width:900px){.sidebar{width:300px}}
@@ -140,7 +220,8 @@ button.legend-toggle.open .legend-toggle-icon{transform:rotate(180deg)}
   .header{padding:8px 12px}
   .last-update{display:none}
 
-  /* Botão exclusivo para mobile */
+  .hide-mobile-btn { display: block; }
+
   .toggle-panel-btn {
     display: flex;
     position: absolute;
@@ -161,7 +242,6 @@ button.legend-toggle.open .legend-toggle-icon{transform:rotate(180deg)}
   }
   .toggle-panel-btn:active { transform: translateX(-50%) scale(0.95); }
   
-  /* Lógica CSS para ocultar a sidebar no mobile */
   #app.panel-hidden .sidebar { display: none; }
   #app.panel-hidden .map-container { height: 100%; }
 }
@@ -185,7 +265,9 @@ html,body{overscroll-behavior-y:none}
 <div id="app">
   <header class="header">
     <div class="header-left">
-      <div class="header-icon">&#128293;</div>
+      <div class="header-icon" id="appLogo" onclick="openImageModal()" title="Clique para ampliar o escudo" aria-label="Ampliar logomarca">
+        <img src="logo.png" alt="Escudo Monitoramento PESB">
+      </div>
       <div class="header-title">
         <h1>Monitoramento Tático do PESB</h1>
         <span>Parque Estadual Serra do Brigadeiro</span>
@@ -193,40 +275,16 @@ html,body{overscroll-behavior-y:none}
     </div>
     <div class="header-right">
       <div class="last-update" id="lastUpdate">Atualizando...</div>
-      <button class="refresh-btn" id="refreshBtn" onclick="loadAllData()">Atualizar Dados</button>
+      <button class="refresh-btn" id="refreshBtn" onclick="loadAllData()" aria-label="Atualizar dados manualmente">Atualizar Dados</button>
     </div>
   </header>
 
   <main class="main-content">
     <aside class="sidebar">
       
-      <!-- 1. RISCO NO COMBATE A INCÊNDIOS -->
+      <!-- 1. FOCOS DE CALOR (FIRMS) -->
       <div class="sidebar-section">
-        <button class="section-header" aria-expanded="true" onclick="toggleSection(this)">
-          <span class="section-title">Risco no Combate a Incêndios</span>
-          <span class="collapse-icon">&#9660;</span>
-        </button>
-        <div class="section-content">
-          <div class="risk-gauge-container">
-            <div class="risk-gauge"><div class="gauge-bg"></div><div class="gauge-needle" id="gaugeNeedle"></div><div class="gauge-center"></div></div>
-            <div class="gauge-labels"><span>BAIXO</span><span>MÉDIO</span><span>ALTO</span><span>EXTREMO</span></div>
-            <div class="gauge-value"><div class="value" id="gaugeValue" style="color:var(--risk-low)">0%</div><div class="label" id="gaugeLabel">Calculando...</div></div>
-          </div>
-          <button class="legend-toggle" id="legendToggle" aria-expanded="false" onclick="toggleLegend()">
-            <span class="legend-toggle-text">Legenda Risco de Combate</span>
-            <span class="legend-toggle-icon" id="legendToggleIcon">&#9662;</span>
-          </button>
-          <div class="legend-items" id="legendItems">
-            <div class="legend-item"><div class="legend-color" style="background:var(--risk-low)"></div><span class="legend-text">Baixo - Condições favoráveis</span></div>
-            <div class="legend-item"><div class="legend-color" style="background:var(--risk-med)"></div><span class="legend-text">Médio - Atenção necessária</span></div>
-            <div class="legend-item"><div class="legend-color" style="background:var(--risk-high)"></div><span class="legend-text">Alto - Risco elevado</span></div>
-            <div class="legend-item"><div class="legend-color" style="background:var(--risk-extreme)"></div><span class="legend-text">Extremo - Combate perigoso</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. FOCOS DE CALOR (FIRMS) -->
-      <div class="sidebar-section">
+        <button class="hide-mobile-btn" onclick="toggleMobilePanel()">🙈 Ocultar Painel no Mapa</button>
         <button class="section-header" aria-expanded="true" onclick="toggleSection(this)">
           <span class="section-title">Focos de Calor (FIRMS)</span>
           <span class="collapse-icon">&#9660;</span>
@@ -247,6 +305,32 @@ html,body{overscroll-behavior-y:none}
             <div class="legend-item"><div class="legend-color" style="background:var(--risk-low)"></div><span class="legend-text"><b>Fraco</b> (&lt;10 a 20 MW)<br><span style="font-size:9px;color:var(--text-muted)">Pequenos focos, limpeza de pasto, queimadas controladas.</span></span></div>
             <div class="legend-item"><div class="legend-color" style="background:var(--risk-med)"></div><span class="legend-text"><b>Médio</b> (20 a 50 MW)<br><span style="font-size:9px;color:var(--text-muted)">Focos em expansão e queimadas em pastagens ou mata secundária.</span></span></div>
             <div class="legend-item"><div class="legend-color" style="background:var(--risk-extreme)"></div><span class="legend-text"><b>Forte</b> (&gt;50 a 100+ MW)<br><span style="font-size:9px;color:var(--text-muted)">Incêndios florestais intensos ou de avanço rápido na vegetação.</span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. RISCOS (REGRA DOS 30) -->
+      <div class="sidebar-section">
+        <button class="section-header" aria-expanded="true" onclick="toggleSection(this)">
+          <span class="section-title">RISCOS (REGRA DOS 30)</span>
+          <span class="collapse-icon">&#9660;</span>
+        </button>
+        <div class="section-content">
+          <div class="risk-gauge-container">
+            <div class="risk-gauge"><div class="gauge-bg"></div><div class="gauge-needle" id="gaugeNeedle"></div><div class="gauge-center"></div></div>
+            <div class="gauge-labels"><span>BAIXO</span><span>MÉDIO</span><span>ALTO</span><span>EXTREMO</span></div>
+            <div class="gauge-value"><div class="value" id="gaugeValue" style="color:var(--risk-low)">0%</div><div class="label" id="gaugeLabel">Calculando...</div></div>
+          </div>
+          <button class="legend-toggle" id="legendToggle" aria-expanded="false" onclick="toggleLegend()">
+            <span class="legend-toggle-text">Legenda Regra dos 30</span>
+            <span class="legend-toggle-icon" id="legendToggleIcon">&#9662;</span>
+          </button>
+          <div class="legend-items" id="legendItems">
+            <div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;padding:0 2px"><b>Regra dos 30</b> — Condição crítica meteorológica para combate a incêndios: <b>Temperatura &gt; 30°C</b>, <b>Umidade &lt; 30%</b> e <b>Vento &gt; 30 km/h</b>.</div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--risk-low)"></div><span class="legend-text">Baixo - Condições favoráveis ao combate</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--risk-med)"></div><span class="legend-text">Médio - Atenção necessária nas operações</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--risk-high)"></div><span class="legend-text">Alto - Risco elevado de propagação rápida</span></div>
+            <div class="legend-item"><div class="legend-color" style="background:var(--risk-extreme)"></div><span class="legend-text">Extremo - Alerta máximo: perigo extremo às equipes</span></div>
           </div>
         </div>
       </div>
@@ -279,7 +363,7 @@ html,body{overscroll-behavior-y:none}
         </div>
       </div>
 
-      <!-- 4. LOCALIDADES (Municípios + Distritos Unificados) -->
+      <!-- 4. LOCALIDADES -->
       <div class="sidebar-section">
         <button class="section-header" aria-expanded="true" onclick="toggleSection(this)">
           <span class="section-title">Localidades Monitoradas</span>
@@ -295,22 +379,21 @@ html,body{overscroll-behavior-y:none}
     <section class="map-container">
       <div id="map"></div>
       
-      <!-- BOTÃO MOBILE DE TELA CHEIA (MAPA / PAINEL) -->
       <button class="toggle-panel-btn" id="btnTogglePanel" onclick="toggleMobilePanel()">🗺️ Ampliar Mapa</button>
 
       <div class="map-controls">
-        <button class="map-control-btn gps-btn" id="btnGps" onclick="locateUser()">📍 Ativar GPS</button>
-        <button class="map-control-btn active" id="btnStreet" onclick="setMapLayer('street')">Ruas</button>
-        <button class="map-control-btn" id="btnSat" onclick="setMapLayer('satellite')">Satélite</button>
-        <button class="map-control-btn" id="btnTopo" onclick="setMapLayer('topo')">Topográfico</button>
-        <button class="map-control-btn" id="btnWind" onclick="toggleWindAnimation()">Vento</button>
+        <button class="map-control-btn gps-btn" id="btnGps" onclick="locateUser()" aria-label="Ativar GPS">📍 Ativar GPS</button>
+        <button class="map-control-btn active" id="btnStreet" onclick="setMapLayer('street')" aria-label="Camada de Ruas">Ruas</button>
+        <button class="map-control-btn" id="btnSat" onclick="setMapLayer('satellite')" aria-label="Camada de Satélite">Satélite</button>
+        <button class="map-control-btn" id="btnTopo" onclick="setMapLayer('topo')" aria-label="Camada Topográfica">Topográfico</button>
+        <button class="map-control-btn" id="btnWind" onclick="toggleWindAnimation()" aria-label="Camada de Vento">Vento</button>
       </div>
       
       <div class="firms-controls" style="position:absolute;bottom:10px;right:10px;display:flex;gap:4px;z-index:500">
-        <button class="map-control-btn firms-btn active" id="firms0h" onclick="setFirmsPeriod(0)">Atual</button>
-        <button class="map-control-btn firms-btn" id="firms1h" onclick="setFirmsPeriod(1)">24h</button>
-        <button class="map-control-btn firms-btn" id="firms2h" onclick="setFirmsPeriod(2)">48h</button>
-        <button class="map-control-btn firms-btn" id="firms3h" onclick="setFirmsPeriod(3)">72h</button>
+        <button class="map-control-btn firms-btn active" id="firms0h" onclick="setFirmsPeriod(0)" aria-label="Focos Atuais">Atual</button>
+        <button class="map-control-btn firms-btn" id="firms1h" onclick="setFirmsPeriod(1)" aria-label="Focos 24h">24h</button>
+        <button class="map-control-btn firms-btn" id="firms2h" onclick="setFirmsPeriod(2)" aria-label="Focos 48h">48h</button>
+        <button class="map-control-btn firms-btn" id="firms3h" onclick="setFirmsPeriod(3)" aria-label="Focos 72h">72h</button>
       </div>
       
       <div class="wind-legend" id="windLegend" style="display:none">
@@ -325,21 +408,45 @@ html,body{overscroll-behavior-y:none}
   </main>
 </div>
 
+<div class="image-modal" id="imageModal" onclick="closeImageModal()">
+  <div class="image-modal-content" onclick="event.stopPropagation()">
+    <button class="image-modal-close" onclick="closeImageModal()" aria-label="Fechar Modal">&times;</button>
+    <img src="logo.png" alt="Escudo Monitoramento Tático PESB Expandido">
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-// --- A11y e Funções Básicas ---
+// --- Registro do Service Worker para o PWA ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then((registration) => {
+      console.log('ServiceWorker registrado com sucesso no escopo: ', registration.scope);
+    }).catch((error) => {
+      console.log('Falha na requisição do ServiceWorker: ', error);
+    });
+  });
+}
+
+function openImageModal() {
+  document.getElementById('imageModal').classList.add('active');
+}
+function closeImageModal() {
+  document.getElementById('imageModal').classList.remove('active');
+}
+
 function toggleSection(headerEl) {
   headerEl.classList.toggle('collapsed');
-  var content = headerEl.nextElementSibling;
+  const content = headerEl.nextElementSibling;
   content.classList.toggle('collapsed');
-  var isExpanded = headerEl.getAttribute('aria-expanded') === 'true';
+  const isExpanded = headerEl.getAttribute('aria-expanded') === 'true';
   headerEl.setAttribute('aria-expanded', !isExpanded);
 }
 
 function toggleGenericLegend(toggleId, itemsId, iconId) {
-  var toggle = document.getElementById(toggleId);
-  var items = document.getElementById(itemsId);
-  var isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+  const toggle = document.getElementById(toggleId);
+  const items = document.getElementById(itemsId);
+  const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
   toggle.setAttribute('aria-expanded', !isExpanded);
   toggle.classList.toggle('open');
   items.classList.toggle('open');
@@ -349,7 +456,6 @@ function toggleLegend() { toggleGenericLegend('legendToggle', 'legendItems', 'le
 function toggleFRPLegend() { toggleGenericLegend('frpLegendToggle', 'frpLegendItems', 'frpLegendToggleIcon'); }
 function toggleFMALegend() { toggleGenericLegend('fmaLegendToggle', 'fmaLegendItems', 'fmaLegendToggleIcon'); }
 
-// --- Alternar Tela Cheia no Mobile ---
 function toggleMobilePanel() {
   const app = document.getElementById('app');
   const btn = document.getElementById('btnTogglePanel');
@@ -368,24 +474,20 @@ function toggleMobilePanel() {
     btn.style.border = 'none';
   }
   
-  // Força o Leaflet a redesenhar o mapa para cobrir o novo espaço de 100% de altura
   setTimeout(() => { map.invalidateSize(); }, 300);
 }
-
 
 function lsGet(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
-var MAP_KEY = 'e4885bf7243f30d6f28a805f4d70daea';
-var map, currentLayer = 'street';
-var weatherData = {}, fireData = [];
+const MAP_KEY = 'e4885bf7243f30d6f28a805f4d70daea';
+let map, currentLayer = 'street';
+let weatherData = {}, fireData = [];
 
-// --- Cache Independente para Focos FIRMS ---
-var firmsPeriod = 0; 
-var firmsCache = { 0: null, 1: null, 2: null, 3: null }; 
-var frpAlertAudio = new Audio('./assets/churrasqueira-eletrica-pegando-fogo-ao-vivo-no-faustao_2.m4a');
+let firmsPeriod = 0; 
+const firmsCache = { 0: null, 1: null, 2: null, 3: null }; 
+const frpAlertAudio = new Audio('./assets/alert.mp3');
 
-// --- ZONAS TÁTICAS: Coordenadas Reais KML (PESB e Zona de Amortecimento) ---
 const polyPESB = [
   [-20.77108,-42.49364],[-20.77739,-42.49402],[-20.77822,-42.49025],[-20.78154,-42.48886],[-20.79459,-42.48839],
   [-20.80516,-42.48896],[-20.80535,-42.49189],[-20.82436,-42.49659],[-20.83022,-42.4949],[-20.83732,-42.49854],
@@ -541,7 +643,7 @@ const polyZA = [
   [-20.9838,-42.51442],[-20.98369,-42.51232],[-20.98354,-42.51023],[-20.98335,-42.50814],[-20.98311,-42.50606],
   [-20.98284,-42.50398],[-20.98251,-42.50191],[-20.98215,-42.49985],[-20.98175,-42.4978],[-20.9813,-42.49576],
   [-20.98081,-42.49372],[-20.98028,-42.4917],[-20.9797,-42.4897],[-20.97909,-42.4877],[-20.97844,-42.48572],
-  [-20.97774,-42.48376],[-20.97701,-42.48181],[-20.97623,-42.47988],[-20.97542,-42.47797],[-20.97457,-42.47608],
+  [-20.9774,-42.48376],[-20.97701,-42.48181],[-20.97623,-42.47988],[-20.97542,-42.47797],[-20.97457,-42.47608],
   [-20.97368,-42.47421],[-20.97275,-42.47236],[-20.97178,-42.47053],[-20.97078,-42.46873],[-20.96973,-42.46695],
   [-20.96866,-42.46519],[-20.96754,-42.46346],[-20.9664,-42.46175],[-20.96521,-42.46008],[-20.9640,-42.45843],
   [-20.96275,-42.4568],[-20.96146,-42.45521],[-20.96015,-42.45365],[-20.9588,-42.45212],[-20.95742,-42.45062],
@@ -552,142 +654,82 @@ const polyZA = [
   [-20.92215,-42.41739],[-20.92043,-42.41636],[-20.91869,-42.41537],[-20.91693,-42.41443],[-20.91516,-42.41352],
   [-20.91336,-42.41266],[-20.91155,-42.41183],[-20.90972,-42.41105],[-20.90858,-42.4106],[-20.90736,-42.40944],
   [-20.90587,-42.40807],[-20.90434,-42.40674],[-20.90279,-42.40545],[-20.90121,-42.40419],[-20.89961,-42.40297],
-  [-20.89798,-42.40179],[-20.89633,-42.40064],[-20.89466,-42.39954],[-20.89296,-42.39847],[-20.89125,-42.39744],
-  [-20.88951,-42.39645],[-20.88775,-42.39551],[-20.88597,-42.3946],[-20.88418,-42.39374],[-20.88348,-42.39342],
-  [-20.88152,-42.3923],[-20.88008,-42.39149],[-20.87862,-42.39071],[-20.87714,-42.38995],[-20.87566,-42.38923],
-  [-20.87416,-42.38853],[-20.87265,-42.38787],[-20.87113,-42.38723],[-20.8696,-42.38662],[-20.86774,-42.38593],
-  [-20.86587,-42.38527],[-20.86398,-42.38467],[-20.86208,-42.3841],[-20.86017,-42.38358],[-20.85825,-42.38311],
-  [-20.85633,-42.38268],[-20.85439,-42.38229],[-20.85244,-42.38195],[-20.85049,-42.38166],[-20.84854,-42.38141],
-  [-20.84658,-42.3812],[-20.84461,-42.38105],[-20.84264,-42.38093],[-20.84067,-42.38087],[-20.8387,-42.38084],
-  [-20.83832,-42.38085],[-20.8367,-42.38002],[-20.8349,-42.37916],[-20.83309,-42.37833],[-20.83126,-42.37755],
-  [-20.82942,-42.37682],[-20.82756,-42.37612],[-20.82569,-42.37547],[-20.8238,-42.37487],[-20.8219,-42.3743],
-  [-20.81999,-42.37378],[-20.81807,-42.37331],[-20.81614,-42.37288],[-20.81421,-42.37249],[-20.81226,-42.37215],
-  [-20.81031,-42.37186],[-20.80836,-42.37161],[-20.80639,-42.3714],[-20.80443,-42.37125],[-20.80246,-42.37113],
-  [-20.80049,-42.37107],[-20.79853,-42.37104],[-20.79744,-42.37036],[-20.79573,-42.36933],[-20.79399,-42.36834],
-  [-20.79223,-42.3674],[-20.79045,-42.36649],[-20.78866,-42.36563],[-20.78684,-42.36481],[-20.78502,-42.36403],
-  [-20.78317,-42.36329],[-20.78131,-42.3626],[-20.77944,-42.36194],[-20.77755,-42.36134],[-20.77565,-42.36077],
-  [-20.77375,-42.36026],[-20.77183,-42.35978],[-20.7699,-42.35935],[-20.76796,-42.35897],[-20.76602,-42.35863],
-  [-20.76407,-42.35833],[-20.76211,-42.35808],[-20.76197,-42.35807],[-20.76193,-42.35794],[-20.76123,-42.35598],
-  [-20.7605,-42.35403],[-20.75973,-42.35211],[-20.75891,-42.3502],[-20.75806,-42.34831],[-20.75717,-42.34644],
-  [-20.75624,-42.3446],[-20.75527,-42.34277],[-20.75427,-42.34097],[-20.75323,-42.33919],[-20.75215,-42.33743],
-  [-20.75104,-42.33571],[-20.74989,-42.3340],[-20.7487,-42.33233],[-20.74749,-42.33068],[-20.74624,-42.32906],
-  [-20.74495,-42.32747],[-20.74364,-42.32591],[-20.74229,-42.32439],[-20.74091,-42.32289],[-20.7395,-42.32142],
-  [-20.73806,-42.31999],[-20.7366,-42.3186],[-20.7351,-42.31723],[-20.73358,-42.3159],[-20.73202,-42.31461],
-  [-20.73045,-42.31336],[-20.72885,-42.31214],[-20.72722,-42.31095],[-20.72557,-42.30981],[-20.72389,-42.30871],
-  [-20.7222,-42.30764],[-20.72048,-42.30661],[-20.71927,-42.30593],[-20.7184,-42.30497],[-20.71721,-42.30372],
-  [-20.71601,-42.3025],[-20.71478,-42.30131],[-20.71354,-42.30013],[-20.71227,-42.29898],[-20.71075,-42.29766],
-  [-20.7092,-42.29636],[-20.70762,-42.29511],[-20.70602,-42.29389],[-20.70439,-42.29271],[-20.70274,-42.29156],
-  [-20.70107,-42.29046],[-20.69937,-42.28939],[-20.69765,-42.28837],[-20.69592,-42.28738],[-20.69416,-42.28643],
+  [-20.89798,-42.40179],[-20.89633,-42.40064],[-20.88951,-42.39645],[-20.88775,-42.39551],[-20.88597,-42.3946],
+  [-20.88418,-42.39374],[-20.88348,-42.39342],[-20.88152,-42.3923],[-20.88008,-42.39149],[-20.87862,-42.39071],
+  [-20.87714,-42.38995],[-20.87566,-42.38923],[-20.87416,-42.38853],[-20.87265,-42.38787],[-20.87113,-42.38723],
+  [-20.8696,-42.38662],[-20.86774,-42.38593],[-20.86587,-42.38527],[-20.86398,-42.38467],[-20.86208,-42.3841],
+  [-20.86017,-42.38358],[-20.85825,-42.38311],[-20.85633,-42.38268],[-20.85439,-42.38229],[-20.85244,-42.38195],
+  [-20.85049,-42.38166],[-20.84854,-42.38141],[-20.84658,-42.3812],[-20.84461,-42.38105],[-20.84264,-42.38093],
+  [-20.84067,-42.38087],[-20.8387,-42.38084],[-20.83832,-42.38085],[-20.8367,-42.38002],[-20.8349,-42.37916],
+  [-20.83309,-42.37833],[-20.83126,-42.37755],[-20.82942,-42.37682],[-20.82756,-42.37612],[-20.82569,-42.37547],
+  [-20.8238,-42.37487],[-20.8219,-42.3743],[-20.81999,-42.37378],[-20.81807,-42.37331],[-20.81614,-42.37288],
+  [-20.81421,-42.37249],[-20.81226,-42.37215],[-20.81031,-42.37186],[-20.80836,-42.37161],[-20.80639,-42.3714],
+  [-20.80443,-42.37125],[-20.80246,-42.37113],[-20.80049,-42.37107],[-20.79853,-42.37104],[-20.79744,-42.37036],
+  [-20.79573,-42.36933],[-20.79399,-42.36834],[-20.79223,-42.3674],[-20.79045,-42.36649],[-20.78866,-42.36563],
+  [-20.78684,-42.36481],[-20.78502,-42.36403],[-20.78317,-42.36329],[-20.78131,-42.3626],[-20.77944,-42.36194],
+  [-20.77565,-42.36077],[-20.77375,-42.36026],[-20.77183,-42.35978],[-20.7699,-42.35935],[-20.76796,-42.35897],
+  [-20.76602,-42.35863],[-20.76407,-42.35833],[-20.76211,-42.35808],[-20.76197,-42.35807],[-20.76193,-42.35794],
+  [-20.76123,-42.35598],[-20.7605,-42.35403],[-20.75973,-42.35211],[-20.75891,-42.3502],[-20.75806,-42.34831],
+  [-20.75717,-42.34644],[-20.75624,-42.3446],[-20.75527,-42.34277],[-20.75427,-42.34097],[-20.75323,-42.33919],
+  [-20.75215,-42.33743],[-20.75104,-42.33571],[-20.74989,-42.3340],[-20.7487,-42.33233],[-20.74749,-42.33068],
+  [-20.74624,-42.32906],[-20.74495,-42.32747],[-20.74364,-42.32591],[-20.74229,-42.32439],[-20.74091,-42.32289],
+  [-20.7395,-42.32142],[-20.73806,-42.31999],[-20.7366,-42.3186],[-20.7351,-42.31723],[-20.73358,-42.3159],
+  [-20.73202,-42.31461],[-20.73045,-42.31336],[-20.72885,-42.31214],[-20.72722,-42.31095],[-20.72557,-42.30981],
+  [-20.72389,-42.30871],[-20.7222,-42.30764],[-20.72048,-42.30661],[-20.71927,-42.30593],[-20.7184,-42.30497],
+  [-20.71721,-42.30372],[-20.71601,-42.3025],[-20.71478,-42.30131],[-20.71354,-42.30013],[-20.71227,-42.29898],
+  [-20.71075,-42.29766],[-20.7092,-42.29636],[-20.70762,-42.29511],[-20.70602,-42.29389],[-20.70439,-42.29271],
+  [-20.70274,-42.29156],[-20.69937,-42.28939],[-20.69765,-42.28837],[-20.69592,-42.28738],[-20.69416,-42.28643],
   [-20.69238,-42.28553],[-20.69059,-42.28467],[-20.68877,-42.28384],[-20.68694,-42.28307],[-20.6851,-42.28233],
   [-20.68324,-42.28164],[-20.68137,-42.28099],[-20.67948,-42.28038],[-20.67758,-42.27982],[-20.67567,-42.2793],
   [-20.67375,-42.27882],[-20.67183,-42.27839],[-20.66989,-42.27801],[-20.66794,-42.27767],[-20.66599,-42.27737],
   [-20.66404,-42.27712],[-20.66208,-42.27692],[-20.66011,-42.27676],[-20.65814,-42.27665],[-20.65617,-42.27658],
   [-20.6542,-42.27656],[-20.65223,-42.27658],[-20.65026,-42.27665],[-20.6483,-42.27677],[-20.64774,-42.27681],
   [-20.64745,-42.27644],[-20.64617,-42.27485],[-20.64485,-42.27329],[-20.6435,-42.27176],[-20.64213,-42.27027],
-  [-20.64072,-42.2688],[-20.63928,-42.26737],[-20.63781,-42.26598],[-20.63631,-42.26461],[-20.63516,-42.2636],
-  [-20.63398,-42.26261],[-20.63279,-42.26163],[-20.63159,-42.26068],[-20.63037,-42.25975],[-20.62914,-42.25884],
-  [-20.62789,-42.25796],[-20.62663,-42.25709],[-20.62525,-42.25616],[-20.62365,-42.25511],[-20.62203,-42.2541],
-  [-20.62031,-42.25307],[-20.61857,-42.25209],[-20.61681,-42.25114],[-20.61504,-42.25024],[-20.61324,-42.24937],
-  [-20.61143,-42.24855],[-20.6096,-42.24777],[-20.60776,-42.24704],[-20.6059,-42.24634],[-20.60402,-42.24569],
-  [-20.60214,-42.24509],[-20.60024,-42.24453],[-20.59833,-42.24401],[-20.59641,-42.24353],[-20.59448,-42.2431],
-  [-20.59255,-42.24272],[-20.5906,-42.24238],[-20.58984,-42.24226],[-20.58888,-42.24166],[-20.58716,-42.24064],
-  [-20.58542,-42.23965],[-20.58366,-42.23871],[-20.58189,-42.2378],[-20.58009,-42.23694],[-20.57828,-42.23612],
-  [-20.57645,-42.23534],[-20.57461,-42.2346],[-20.57275,-42.23391],[-20.57087,-42.23326],[-20.56899,-42.23265],
-  [-20.56709,-42.23209],[-20.56518,-42.23157],[-20.56326,-42.2311],[-20.56133,-42.23067],[-20.5594,-42.23029],
-  [-20.55745,-42.22995],[-20.5555,-42.22965],[-20.55354,-42.2294],[-20.55158,-42.2292],[-20.54962,-42.22904],
-  [-20.54765,-42.22893],[-20.54568,-42.22886],[-20.54371,-42.22884],[-20.54174,-42.22886],[-20.53977,-42.22893],
-  [-20.5378,-42.22905],[-20.53584,-42.22921],[-20.53388,-42.22942],[-20.53192,-42.22967],[-20.52997,-42.22996],
-  [-20.52803,-42.23031],[-20.52609,-42.23069],[-20.52416,-42.23112],[-20.52224,-42.2316],[-20.52033,-42.23212],
-  [-20.51844,-42.23269],[-20.51655,-42.23329],[-20.51468,-42.23395],[-20.51282,-42.23464],[-20.51212,-42.23492],
-  [-20.51113,-42.23524],[-20.50925,-42.23589],[-20.50739,-42.23659],[-20.50555,-42.23733],[-20.50372,-42.23811],
-  [-20.50191,-42.23893],[-20.50012,-42.23979],[-20.49834,-42.2407],[-20.49658,-42.24164],[-20.49485,-42.24263],
-  [-20.49313,-42.24366],[-20.49143,-42.24472],[-20.48976,-42.24583],[-20.48811,-42.24697],[-20.48649,-42.24815],
-  [-20.48488,-42.24937],[-20.48331,-42.25063],[-20.48176,-42.25192],[-20.48024,-42.25325],[-20.47874,-42.25461],
-  [-20.47727,-42.25601],[-20.47584,-42.25744],[-20.47443,-42.2589],[-20.47305,-42.2604],[-20.4717,-42.26192],
-  [-20.47039,-42.26348],[-20.46911,-42.26507],[-20.46786,-42.26668],[-20.46664,-42.26833],[-20.46546,-42.2700],
-  [-20.46431,-42.2717],[-20.4632,-42.27343],[-20.46212,-42.27518],[-20.46108,-42.27696],[-20.46008,-42.27876],
-  [-20.45911,-42.28058],[-20.45819,-42.28242],[-20.4573,-42.28429],[-20.45644,-42.28617],[-20.45563,-42.28808],
-  [-20.45486,-42.2900],[-20.45412,-42.29194],[-20.45364,-42.29331],[-20.45315,-42.29433],[-20.4523,-42.29622]
+  [-20.63928,-42.26737],[-20.63781,-42.26598],[-20.63631,-42.26461],[-20.63516,-42.2636],[-20.63398,-42.26261],
+  [-20.63279,-42.26163],[-20.63159,-42.26068],[-20.63037,-42.25975],[-20.62914,-42.25884],[-20.62789,-42.25796],
+  [-20.62663,-42.25709],[-20.62525,-42.25616],[-20.62365,-42.25511],[-20.62203,-42.2541],[-20.62031,-42.25307],
+  [-20.61857,-42.25209],[-20.61681,-42.25114],[-20.61504,-42.25024],[-20.61324,-42.24937],[-20.61143,-42.24855],
+  [-20.6096,-42.24777],[-20.60776,-42.24704],[-20.6059,-42.24634],[-20.60402,-42.24569],[-20.60214,-42.24509],
+  [-20.60024,-42.24453],[-20.59833,-42.24401],[-20.59641,-42.24353],[-20.59448,-42.2431],[-20.59255,-42.24272],
+  [-20.5906,-42.24238],[-20.58984,-42.24226],[-20.58888,-42.24166],[-20.58716,-42.24064],[-20.58542,-42.23965],
+  [-20.58366,-42.23871],[-20.58189,-42.2378],[-20.58009,-42.23694],[-20.57828,-42.23612],[-20.57645,-42.23534],
+  [-20.57461,-42.2346],[-20.57275,-42.23391],[-20.57087,-42.23326],[-20.56899,-42.23265],[-20.56709,-42.23209],
+  [-20.56518,-42.23157],[-20.56326,-42.2311],[-20.56133,-42.23067],[-20.5594,-42.23029],[-20.55745,-42.22995],
+  [-20.5555,-42.22965],[-20.55354,-42.2294],[-20.55158,-42.2292],[-20.54962,-42.22904],[-20.54765,-42.22893],
+  [-20.54568,-42.22886],[-20.54371,-42.22884],[-20.54174,-42.22886],[-20.53977,-42.22893],[-20.5378,-42.22905],
+  [-20.53584,-42.22921],[-20.53388,-42.22942],[-20.53192,-42.22967],[-20.52997,-42.22996],[-20.52803,-42.23031],
+  [-20.52609,-42.23069],[-20.52416,-42.23112],[-20.52224,-42.2316],[-20.52033,-42.23212],[-20.51844,-42.23269],
+  [-20.51655,-42.23329],[-20.51468,-42.23395],[-20.51282,-42.23464],[-20.51212,-42.23492],[-20.51113,-42.23524],
+  [-20.50925,-42.23589],[-20.50739,-42.23659],[-20.50555,-42.23733],[-20.50372,-42.23811],[-20.50191,-42.23893],
+  [-20.50012,-42.23979],[-20.49834,-42.2407],[-20.49658,-42.24164],[-20.49485,-42.24263],[-20.49313,-42.24366],
+  [-20.49143,-42.24472],[-20.48976,-42.24583],[-20.48811,-42.24697],[-20.48649,-42.24815],[-20.48488,-42.24937],
+  [-20.48331,-42.25063],[-20.48176,-42.25192],[-20.48024,-42.25325],[-20.47874,-42.25461],[-20.47727,-42.25601],
+  [-20.47584,-42.25744],[-20.47443,-42.2589],[-20.47305,-42.2604],[-20.4717,-42.26192],[-20.47039,-42.26348],
+  [-20.46911,-42.26507],[-20.46786,-42.26668],[-20.46664,-42.26833],[-20.46546,-42.2700],[-20.46431,-42.2717],
+  [-20.4632,-42.27343],[-20.46212,-42.27518],[-20.46108,-42.27696],[-20.46008,-42.27876],[-20.45911,-42.28058],
+  [-20.45819,-42.28242],[-20.4573,-42.28429],[-20.45644,-42.28617],[-20.45563,-42.28808],[-20.45486,-42.2900],
+  [-20.45412,-42.29194],[-20.45364,-42.29331],[-20.45315,-42.29433],[-20.4523,-42.29622]
 ];
 
-// Algoritmo Ray-Casting para detectar "Ponto dentro do Polígono"
-function isPointInPolygon(point, vs) {
-  let x = point[0], y = point[1];
-  let inside = false;
-  for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-    let xi = vs[i][0], yi = vs[i][1], xj = vs[j][0], yj = vs[j][1];
-    let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-    if (intersect) inside = !inside;
-  }
-  return inside;
-}
-
-// --- Inicialização do Mapa Leaflet ---
 map = L.map('map', {zoomControl: false}).setView([-20.75, -42.45], 11);
 L.control.zoom({position: 'bottomleft'}).addTo(map);
 
-var tileLayers = {
+const tileLayers = {
   street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OSM' }),
   satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' }),
   topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: '© OSM' })
 };
 tileLayers.street.addTo(map);
 
-// Renderizando as Camadas Geográficas Oficiais
-var layerPESB = L.polygon(polyPESB, {
+const layerPESB = L.polygon(polyPESB, {
   color: '#22c55e', weight: 2, fillOpacity: 0
 }).addTo(map).bindPopup("<b>Parque Estadual Serra do Brigadeiro</b><br>Limiar de Alerta: ≥ 0.1 MW");
 
-var layerZA = L.polygon([polyZA, polyPESB], { // Array com as coordenadas do PESB para criar o 'buraco'
+const layerZA = L.polygon([polyZA, polyPESB], {
   color: '#22c55e', weight: 2, fillOpacity: 0, dashArray: '5, 5'
 }).addTo(map).bindPopup("<b>Zona de Amortecimento (PESB)</b><br>Limiar de Alerta: ≥ 5.0 MW");
 
-var fireLayer = L.layerGroup().addTo(map);
-
-// --- Ferramenta de GPS para Orientação em Campo ---
-var gpsMarker, gpsCircle;
-function locateUser() {
-  const btn = document.getElementById('btnGps');
-  if (navigator.geolocation) {
-    btn.classList.add('loading'); btn.innerText = 'Buscando GPS...';
-    navigator.geolocation.getCurrentPosition(function(pos) {
-      btn.classList.remove('loading'); btn.innerText = '📍 GPS Atualizado';
-      const lat = pos.coords.latitude, lon = pos.coords.longitude, accuracy = pos.coords.accuracy;
-      if (gpsMarker) { map.removeLayer(gpsMarker); map.removeLayer(gpsCircle); }
-      gpsCircle = L.circle([lat, lon], {radius: accuracy, color: 'var(--accent-blue)', fillOpacity: 0.2}).addTo(map);
-      gpsMarker = L.marker([lat, lon]).addTo(map).bindPopup("<b>Sua localização atual</b><br>Precisão: " + Math.round(accuracy) + " metros.").openPopup();
-      map.setView([lat, lon], 14); 
-      setTimeout(() => btn.innerText = '📍 Ativar GPS', 4000);
-    }, function(err) {
-      btn.classList.remove('loading'); btn.innerText = '📍 Ativar GPS';
-      alert("Erro ao acessar GPS. Verifique a permissão do seu navegador.");
-    }, { enableHighAccuracy: true });
-  } else alert("Geolocalização não suportada.");
-}
-
-function setMapLayer(layerType) {
-  document.querySelectorAll('.map-control-btn:not(.firms-btn):not(#btnWind):not(.gps-btn)').forEach(btn => btn.classList.remove('active'));
-  if(tileLayers[currentLayer]) map.removeLayer(tileLayers[currentLayer]);
-  if (layerType === 'street') { document.getElementById('btnStreet').classList.add('active'); tileLayers.street.addTo(map); }
-  else if (layerType === 'satellite') { document.getElementById('btnSat').classList.add('active'); tileLayers.satellite.addTo(map); }
-  else if (layerType === 'topo') { document.getElementById('btnTopo').classList.add('active'); tileLayers.topo.addTo(map); }
-  currentLayer = layerType;
-}
-
-// --- Dados das Localidades ---
-var localidades = [
-  {nome:'Araponga',lat:-20.6706,lon:-42.5131, tipo:'Município'}, {nome:'Divino',lat:-20.6144,lon:-42.1486, tipo:'Município'},
-  {nome:'Ervália',lat:-20.8403,lon:-42.6522, tipo:'Município'}, {nome:'Fervedouro',lat:-20.7277,lon:-42.2790, tipo:'Município'},
-  {nome:'Miradouro',lat:-20.8908,lon:-42.3428, tipo:'Município'}, {nome:'Muriaé',lat:-21.1306,lon:-42.3664, tipo:'Município'},
-  {nome:'Pedra Bonita',lat:-20.5208,lon:-42.3300, tipo:'Município'}, {nome:'Rosário da Limeira',lat:-20.9830,lon:-42.5170, tipo:'Município'},
-  {nome:'Sericita',lat:-20.4733,lon:-42.4817, tipo:'Município'}, {nome:'Belisário',lat:-20.9261,lon:-42.4588,muni:'Muriaé', tipo:'Distrito'},
-  {nome:'São Domingos',lat:-20.7501,lon:-42.5294,muni:'Araponga', tipo:'Distrito'}, {nome:'Santo Antônio da Ventania',lat:-20.9559,lon:-42.6019,muni:'Ervália', tipo:'Distrito'},
-  {nome:'Careço',lat:-20.8435,lon:-42.5388,muni:'Ervália', tipo:'Distrito'}, {nome:'Estevão de Araújo',lat:-20.6100,lon:-42.5360,muni:'Araponga', tipo:'Distrito'},
-  {nome:'São Vicente do Grama',lat:-20.5070,lon:-42.5250,muni:'Jequeri', tipo:'Distrito'}, {nome:'Ribeirão de São Domingos',lat:-20.4660,lon:-42.2830,muni:'Santa Margarida', tipo:'Distrito'},
-  {nome:'Bom Jesus do Divino',lat:-20.5980,lon:-42.2650,muni:'Divino', tipo:'Distrito'}, {nome:'São Pedro do Glória',lat:-20.7090,lon:-42.3700,muni:'Fervedouro', tipo:'Distrito'},
-  {nome:'Bom Jesus do Madeira',lat:-20.7237,lon:-42.4236,muni:'Fervedouro', tipo:'Distrito'}, {nome:'Santa Cruz do Monte Alverne',lat:-20.7817,lon:-42.4372,muni:'Miradouro', tipo:'Distrito'},
-  {nome:'Dom Viçoso',lat:-20.77931,lon:-42.5127,muni:'Ervália', tipo:'Distrito'}
-];
+const fireLayer = L.layerGroup().addTo(map);
 
 async function loadAllData() {
   const btn = document.getElementById('refreshBtn'); btn.classList.add('loading'); btn.innerText = 'Buscando...';
@@ -742,7 +784,6 @@ function processFirmsCSV(csvText) {
     const lat = parseFloat(cols[latIdx]), lon = parseFloat(cols[lonIdx]), frp = parseFloat(cols[frpIdx]);
     totalFrp += frp; count++;
     
-    // Verificação Espacial via Polígonos (Limiares Táticos)
     const inPESB = isPointInPolygon([lat, lon], polyPESB);
     const inZA = !inPESB && isPointInPolygon([lat, lon], polyZA);
     
@@ -759,7 +800,6 @@ function processFirmsCSV(csvText) {
   }
   document.getElementById('fireCount').innerText = count; document.getElementById('fireFrp').innerText = count > 0 ? (totalFrp / count).toFixed(1) : '0';
   
-  // ALERTA SONORO
   if (alarmeAcionado) {
     frpAlertAudio.play().catch(e => console.log('Áudio pendente de interação da aba com o usuário'));
   }
@@ -768,7 +808,7 @@ function processFirmsCSV(csvText) {
 function setFirmsPeriod(days){ firmsPeriod=days; document.querySelectorAll('.firms-btn').forEach(function(b){b.classList.remove('active');}); document.getElementById('firms'+days+'h').classList.add('active'); fetchFirmsData(); }
 
 function calcularRisco(temp,umidade,vento){
-  var risco=0;
+  let risco=0;
   if(umidade<30) risco+=35; else if(umidade<50) risco+=20; else if(umidade<70) risco+=10;
   if(temp>30) risco+=35; else if(temp>25) risco+=20; else if(temp>20) risco+=10;
   if(vento>30) risco+=30; else if(vento>20) risco+=15; else if(vento>10) risco+=5;
@@ -780,9 +820,9 @@ function getRiskColor(risco){
   if(risco>=35)return{bg:'var(--risk-med)',text:'#000',label:'MÉDIO'}; return{bg:'var(--risk-low)',text:'#fff',label:'BAIXO'};
 }
 function calcularFMA(ur13h,chuva24h,fmaOntem){
-  var y; if(ur13h>=85) y=0.0; else if(ur13h>=55) y=(100.0-ur13h)/10.0; else if(ur13h>=30) y=(100.0-ur13h)/5.0; else y=(100.0-ur13h)/2.5;
-  var fmaHoje; if(chuva24h<=2.4) fmaHoje=fmaOntem+y; else if(chuva24h<=4.9) fmaHoje=Math.max(0.0,fmaOntem-chuva24h)+y; else if(chuva24h<=9.9) fmaHoje=(fmaOntem*0.7)+y; else fmaHoje=y;
-  var classe = fmaHoje<=1.0?'Nulo':fmaHoje<=3.0?'Pequeno':fmaHoje<=8.0?'Medio':fmaHoje<=24.0?'Alto':'Muito Alto'; return{fma:Math.round(fmaHoje*100)/100,classe:classe};
+  let y; if(ur13h>=85) y=0.0; else if(ur13h>=55) y=(100.0-ur13h)/10.0; else if(ur13h>=30) y=(100.0-ur13h)/5.0; else y=(100.0-ur13h)/2.5;
+  let fmaHoje; if(chuva24h<=2.4) fmaHoje=fmaOntem+y; else if(chuva24h<=4.9) fmaHoje=Math.max(0.0,fmaOntem-chuva24h)+y; else if(chuva24h<=9.9) fmaHoje=(fmaOntem*0.7)+y; else fmaHoje=y;
+  const classe = fmaHoje<=1.0?'Nulo':fmaHoje<=3.0?'Pequeno':fmaHoje<=8.0?'Medio':fmaHoje<=24.0?'Alto':'Muito Alto'; return{fma:Math.round(fmaHoje*100)/100,classe:classe};
 }
 function getFMAColor(classe){
   switch(classe){ case'Nulo':return{bg:'var(--accent-blue)',text:'#fff'}; case'Pequeno':return{bg:'var(--risk-low)',text:'#fff'}; case'Medio':return{bg:'var(--risk-med)',text:'#000'}; case'Alto':return{bg:'var(--risk-high)',text:'#fff'}; case'Muito Alto':return{bg:'var(--risk-extreme)',text:'#fff'}; default:return{bg:'var(--text-dark-muted)',text:'#fff'};}
@@ -827,34 +867,33 @@ function renderCards() {
   });
 }
 
-// --- Animação de Vento ---
-var windCanvas=null,windCtx=null,windAnimationId=null,windParticles=[],windEnabled=false,windDataPoints=[];
+let windCanvas=null,windCtx=null,windAnimationId=null,windParticles=[],windEnabled=false,windDataPoints=[];
 function initWindCanvas(){
   if(!map)return; windCanvas=document.createElement('canvas'); windCanvas.className='wind-canvas'; windCanvas.style.width='100%'; windCanvas.style.height='100%';
   document.getElementById('map').appendChild(windCanvas); windCtx=windCanvas.getContext('2d');
   resizeWindCanvas(); map.on('move',resizeWindCanvas); map.on('zoom',resizeWindCanvas); map.on('resize',resizeWindCanvas);
 }
-function resizeWindCanvas(){ if(windCanvas){var sz=map.getSize(); windCanvas.width=sz.x; windCanvas.height=sz.y;} }
+function resizeWindCanvas(){ if(windCanvas){const sz=map.getSize(); windCanvas.width=sz.x; windCanvas.height=sz.y;} }
 function updateWindData(){
-  windDataPoints=[]; var pts=[];
-  localidades.forEach(function(loc){ var d = weatherData[loc.nome]; if(d) pts.push({lat:loc.lat, lon:loc.lon, speed:d.vento, direction:d.ventoDir, name:loc.nome}); });
+  windDataPoints=[]; const pts=[];
+  localidades.forEach(function(loc){ const d = weatherData[loc.nome]; if(d) pts.push({lat:loc.lat, lon:loc.lon, speed:d.vento, direction:d.ventoDir, name:loc.nome}); });
   pts.forEach(function(p){windDataPoints.push(p);});
-  for(var i=0;i<pts.length;i++){ for(var j=i+1;j<pts.length;j++){ windDataPoints.push({lat:(pts[i].lat+pts[j].lat)/2,lon:(pts[i].lon+pts[j].lon)/2,speed:(pts[i].speed+pts[j].speed)/2,direction:(pts[i].direction+pts[j].direction)/2,name:'interp'}); } }
+  for(let i=0;i<pts.length;i++){ for(let j=i+1;j<pts.length;j++){ windDataPoints.push({lat:(pts[i].lat+pts[j].lat)/2,lon:(pts[i].lon+pts[j].lon)/2,speed:(pts[i].speed+pts[j].speed)/2,direction:(pts[i].direction+pts[j].direction)/2,name:'interp'}); } }
 }
-function getWindAtPoint(lat,lon){ var best=null,bestD=Infinity; for(var i=0;i<windDataPoints.length;i++){ var p=windDataPoints[i], d=Math.sqrt(Math.pow(p.lat-lat,2)+Math.pow(p.lon-lon,2)); if(d<bestD){bestD=d;best=p;} } return best||{speed:5,direction:90}; }
+function getWindAtPoint(lat,lon){ let best=null,bestD=Infinity; for(let i=0;i<windDataPoints.length;i++){ const p=windDataPoints[i], d=Math.sqrt(Math.pow(p.lat-lat,2)+Math.pow(p.lon-lon,2)); if(d<bestD){bestD=d;best=p;} } return best||{speed:5,direction:90}; }
 function windSpeedToColor(speed){ if(speed>=50)return 'rgba(85,26,139,'; if(speed>=40)return 'rgba(124,58,237,'; if(speed>=30)return 'rgba(59,130,246,'; if(speed>=20)return 'rgba(34,211,238,'; if(speed>=10)return 'rgba(211,211,211,'; return 'rgba(255,255,255,'; }
-function createParticle(){ var b=map.getBounds(), lat=b.getSouth()+Math.random()*(b.getNorth()-b.getSouth()), lon=b.getWest()+Math.random()*(b.getEast()-b.getWest()), w=getWindAtPoint(lat,lon), rad=(w.direction||90)*Math.PI/180; return{lat:lat,lon:lon,life:120+Math.random()*240,maxLife:360,speed:(w.speed||5)*0.000025,dir:rad,size:1+Math.random()*1.5}; }
-function updateParticles(){ var b=map.getBounds(); for(var i=0;i<windParticles.length;i++){ var p=windParticles[i]; p.life--; p.lat+=Math.sin(p.dir)*p.speed; p.lon+=Math.cos(p.dir)*p.speed; if(p.life<=0||p.lat<b.getSouth()||p.lat>b.getNorth()||p.lon<b.getWest()||p.lon>b.getEast()) windParticles[i]=createParticle(); } }
+function createParticle(){ const b=map.getBounds(), lat=b.getSouth()+Math.random()*(b.getNorth()-b.getSouth()), lon=b.getWest()+Math.random()*(b.getEast()-b.getWest()), w=getWindAtPoint(lat,lon), rad=(w.direction||90)*Math.PI/180; return{lat:lat,lon:lon,life:120+Math.random()*240,maxLife:360,speed:(w.speed||5)*0.000025,dir:rad,size:1+Math.random()*1.5}; }
+function updateParticles(){ const b=map.getBounds(); for(let i=0;i<windParticles.length;i++){ const p=windParticles[i]; p.life--; p.lat+=Math.sin(p.dir)*p.speed; p.lon+=Math.cos(p.dir)*p.speed; if(p.life<=0||p.lat<b.getSouth()||p.lat>b.getNorth()||p.lon<b.getWest()||p.lon>b.getEast()) windParticles[i]=createParticle(); } }
 function drawParticles(){
   if(!windCtx||!windCanvas)return; windCtx.clearRect(0,0,windCanvas.width,windCanvas.height); if(!windEnabled||windDataPoints.length===0)return;
-  for(var i=0;i<windParticles.length;i++){ var p=windParticles[i], pt=map.latLngToContainerPoint([p.lat,p.lon]), w=getWindAtPoint(p.lat,p.lon), cb=windSpeedToColor(w.speed||5), a=(p.life/p.maxLife)*0.6; windCtx.beginPath(); windCtx.arc(pt.x,pt.y,p.size,0,Math.PI*2); windCtx.fillStyle=cb+a+')'; windCtx.fill(); var dir=(w.direction||90)*Math.PI/180; windCtx.beginPath(); windCtx.moveTo(pt.x,pt.y); windCtx.lineTo(pt.x+Math.cos(dir)*8,pt.y-Math.sin(dir)*8); windCtx.strokeStyle=cb+(a*0.5)+')'; windCtx.lineWidth=0.8; windCtx.stroke(); }
+  for(let i=0;i<windParticles.length;i++){ const p=windParticles[i], pt=map.latLngToContainerPoint([p.lat,p.lon]), w=getWindAtPoint(p.lat,p.lon), cb=windSpeedToColor(w.speed||5), a=(p.life/p.maxLife)*0.6; windCtx.beginPath(); windCtx.arc(pt.x,pt.y,p.size,0,Math.PI*2); windCtx.fillStyle=cb+a+')'; windCtx.fill(); const dir=(w.direction||90)*Math.PI/180; windCtx.beginPath(); windCtx.moveTo(pt.x,pt.y); windCtx.lineTo(pt.x+Math.cos(dir)*8,pt.y-Math.sin(dir)*8); windCtx.strokeStyle=cb+(a*0.5)+')'; windCtx.lineWidth=0.8; windCtx.stroke(); }
 }
-var windFrameSkip=0;
+let windFrameSkip=0;
 function animateWind(){ if(!windEnabled)return; windFrameSkip++; if(windFrameSkip%2===0){updateParticles(); drawParticles();} windAnimationId=requestAnimationFrame(animateWind); }
 function startWindAnimation(){ 
   if(windAnimationId) cancelAnimationFrame(windAnimationId); 
   updateWindData();
-  windFrameSkip=0; windParticles=[]; for(var i=0;i<300;i++)windParticles.push(createParticle()); 
+  windFrameSkip=0; windParticles=[]; for(let i=0;i<300;i++)windParticles.push(createParticle()); 
   windEnabled=true; document.getElementById('windLegend').style.display='block'; document.getElementById('btnWind').classList.add('active'); animateWind(); 
 }
 function stopWindAnimation(){ windEnabled=false; if(windAnimationId)cancelAnimationFrame(windAnimationId); if(windCtx&&windCanvas)windCtx.clearRect(0,0,windCanvas.width,windCanvas.height); document.getElementById('windLegend').style.display='none'; document.getElementById('btnWind').classList.remove('active'); }
