@@ -48,8 +48,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-m
 .refresh-btn.loading{opacity:0.6;pointer-events:none}
 
 .main-content{display:flex;flex:1;overflow:hidden}
-.sidebar{width:340px;background:var(--bg-panel);border-right:1px solid var(--bg-card);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;flex-shrink:0;-webkit-overflow-scrolling:touch}
+.sidebar{width:340px;background:var(--bg-panel);border-right:1px solid var(--bg-card);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;flex-shrink:0;-webkit-overflow-scrolling:touch;padding-bottom:100px;}
 .sidebar-section{padding:14px;border-bottom:1px solid var(--bg-card)}
+.sidebar-section:last-child{border-bottom:none;padding-bottom:20px;}
 
 button.section-header {width: 100%; background: transparent; border: none; font-family: inherit; display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-bottom:10px;padding:4px 0;}
 button.section-header:focus {outline: 2px solid var(--accent-blue); outline-offset: 2px; border-radius: 4px;}
@@ -57,8 +58,8 @@ button.section-header.collapsed {margin-bottom:0;}
 .section-title {font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;display:flex;align-items:center;gap:6px;margin:0;}
 .collapse-icon {font-size:12px;color:var(--text-dark-muted);transition:transform 0.3s ease;}
 button.section-header.collapsed .collapse-icon {transform:rotate(-90deg);}
-.section-content {transition:max-height 0.35s ease, opacity 0.3s ease;max-height:3000px;opacity:1;overflow:hidden;}
-.section-content.collapsed {max-height:0;opacity:0;}
+.section-content {transition:max-height 0.35s ease, opacity 0.3s ease;max-height:10000px;opacity:1;}
+.section-content.collapsed {max-height:0;opacity:0;overflow:hidden;}
 
 .hide-mobile-btn {
   display: none;
@@ -106,7 +107,7 @@ button.legend-toggle.open .legend-toggle-icon{transform:rotate(180deg)}
 .legend-color{width:12px;height:12px;border-radius:3px;flex-shrink:0}
 .legend-text{color:var(--text-secondary);font-weight:500}
 
-.muni-cards{display:flex;flex-direction:column;gap:6px}
+.muni-cards{display:flex;flex-direction:column;gap:6px;padding-bottom:10px;}
 .muni-card{background:var(--bg-card);border-radius:10px;padding:12px;border:1px solid var(--border-color);cursor:pointer;transition:all 0.2s;-webkit-touch-callout:none;user-select:none}
 .muni-card:active{transform:scale(0.98)}
 .muni-card:hover{border-color:var(--border-hover)}
@@ -121,9 +122,35 @@ button.legend-toggle.open .legend-toggle-icon{transform:rotate(180deg)}
 .muni-rain-label{font-size:10px;color:var(--text-muted);font-weight:500}
 .muni-rain-value{font-size:11px;font-weight:700;color:var(--risk-high)}
 .fire-summary{display:flex;gap:10px}
-.fire-stat{flex:1;background:var(--bg-card);border-radius:8px;padding:8px;text-align:center;border:1px solid var(--border-color)}
-.fire-stat-value{font-size:20px;font-weight:800;color:var(--risk-high)}
+.fire-stat{flex:1;background:var(--bg-card);border-radius:8px;padding:8px;text-align:center;border:1px solid var(--border-color);cursor:pointer;transition:all 0.2s;}
+.fire-stat:hover{border-color:var(--accent-blue);}
+.fire-stat-value{font-size:20px;font-weight:800;color:var(--risk-extreme)}
 .fire-stat-label{font-size:9px;color:var(--text-muted);margin-top:1px;font-weight:500}
+
+/* Estilos para a Lista de Focos */
+.fire-list-container {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+.fire-list-container.open { display: flex; }
+.fire-item-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.fire-item-card:hover { background: var(--bg-card-hover); }
+.fire-item-header { display: flex; justify-content: space-between; font-weight: 700; color: var(--risk-extreme); }
+.fire-item-details { display: flex; justify-content: space-between; margin-top: 4px; color: var(--text-muted); font-size: 10px; }
 
 .map-container{flex:1;position:relative;background:var(--bg-dark)}
 #map{width:100%;height:100%}
@@ -138,8 +165,6 @@ button.legend-toggle.open .legend-toggle-icon{transform:rotate(180deg)}
 .popup-metric{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px}
 .popup-metric-label{color:var(--text-dark-muted);font-weight:500}
 .popup-metric-value{font-weight:700;color:var(--bg-panel)}
-.popup-risk{margin-top:8px;padding:6px 10px;border-radius:6px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase}
-.popup-fma{margin-top:6px;padding:5px 10px;border-radius:5px;text-align:center;font-size:10px;font-weight:700}
 
 .loading-overlay{position:absolute;inset:0;background:rgba(10,14,23,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:14px}
 .loading-overlay.hidden{display:none}
@@ -222,9 +247,8 @@ button.legend-toggle.open .legend-toggle-icon{transform:rotate(180deg)}
 
   .hide-mobile-btn { display: block; }
 
-  /* Estilos refatorados: o botão Mostrar Painel agora só aparece quando o menu estiver escondido */
   .toggle-panel-btn {
-    display: none; /* Escondido por padrão, mesmo no mobile */
+    display: none;
     position: absolute;
     bottom: 45px; 
     left: 50%;
@@ -243,7 +267,6 @@ button.legend-toggle.open .legend-toggle-icon{transform:rotate(180deg)}
   }
   .toggle-panel-btn:active { transform: translateX(-50%) scale(0.95); }
   
-  /* Quando a classe 'panel-hidden' for ativada pelo botão "Ocultar", a sidebar some, o mapa cresce e o botão aparece */
   #app.panel-hidden .sidebar { display: none; }
   #app.panel-hidden .map-container { height: 100%; }
   #app.panel-hidden .toggle-panel-btn { display: flex; }
@@ -294,9 +317,12 @@ html,body{overscroll-behavior-y:none}
         </button>
         <div class="section-content">
           <div class="fire-summary">
-            <div class="fire-stat"><div class="fire-stat-value" id="fireCount">-</div><div class="fire-stat-label">Focos Detectados</div></div>
+            <div class="fire-stat" onclick="toggleFireList()"><div class="fire-stat-value" id="fireCount">-</div><div class="fire-stat-label">Focos Detectados ▼</div></div>
             <div class="fire-stat"><div class="fire-stat-value" id="fireFrp">-</div><div class="fire-stat-label">FRP Médio (MW)</div></div>
           </div>
+          
+          <div class="fire-list-container" id="fireListContainer"></div>
+
           <div style="margin-top:10px;font-size:10px;color:var(--text-dark-muted);text-align:center" id="firmsInfo">Dados MODIS/VIIRS - NASA FIRMS</div>
           
           <button class="legend-toggle" id="frpLegendToggle" aria-expanded="false" onclick="toggleFRPLegend()">
@@ -382,7 +408,6 @@ html,body{overscroll-behavior-y:none}
     <section class="map-container">
       <div id="map"></div>
       
-      <!-- O botão Ampliar Mapa foi substituído apenas pelo Mostrar Painel, ativo quando o painel some -->
       <button class="toggle-panel-btn" id="btnTogglePanel" onclick="toggleMobilePanel()" aria-label="Mostrar Painel de Dados">📋 Mostrar Painel</button>
 
       <div class="map-controls">
@@ -421,7 +446,6 @@ html,body{overscroll-behavior-y:none}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-// --- Registro do Service Worker para o PWA ---
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then((registration) => {
@@ -432,12 +456,8 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-function openImageModal() {
-  document.getElementById('imageModal').classList.add('active');
-}
-function closeImageModal() {
-  document.getElementById('imageModal').classList.remove('active');
-}
+function openImageModal() { document.getElementById('imageModal').classList.add('active'); }
+function closeImageModal() { document.getElementById('imageModal').classList.remove('active'); }
 
 function toggleSection(headerEl) {
   headerEl.classList.toggle('collapsed');
@@ -460,11 +480,14 @@ function toggleLegend() { toggleGenericLegend('legendToggle', 'legendItems', 'le
 function toggleFRPLegend() { toggleGenericLegend('frpLegendToggle', 'frpLegendItems', 'frpLegendToggleIcon'); }
 function toggleFMALegend() { toggleGenericLegend('fmaLegendToggle', 'fmaLegendItems', 'fmaLegendToggleIcon'); }
 
-// Função simplificada para alternar o painel
+function toggleFireList() {
+  const list = document.getElementById('fireListContainer');
+  list.classList.toggle('open');
+}
+
 function toggleMobilePanel() {
   const app = document.getElementById('app');
   app.classList.toggle('panel-hidden');
-  
   setTimeout(() => { map.invalidateSize(); }, 300);
 }
 
@@ -473,11 +496,105 @@ function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
 const MAP_KEY = 'e4885bf7243f30d6f28a805f4d70daea';
 let map, currentLayer = 'street';
-let weatherData = {}, fireData = [];
+let weatherData = {}, fireDataList = [];
 
 let firmsPeriod = 0; 
 const firmsCache = { 0: null, 1: null, 2: null, 3: null }; 
 const frpAlertAudio = new Audio('./assets/alert.mp3');
+
+// Lista global de localidades para consulta meteorológica
+var localidades = [
+  {nome:'Araponga',lat:-20.6706,lon:-42.5131, tipo:'Município'}, 
+  {nome:'Divino',lat:-20.6144,lon:-42.1486, tipo:'Município'},
+  {nome:'Ervália',lat:-20.8403,lon:-42.6522, tipo:'Município'}, 
+  {nome:'Fervedouro',lat:-20.7277,lon:-42.2790, tipo:'Município'},
+  {nome:'Miradouro',lat:-20.8908,lon:-42.3428, tipo:'Município'}, 
+  {nome:'Muriaé',lat:-21.1306,lon:-42.3664, tipo:'Município'},
+  {nome:'Pedra Bonita',lat:-20.5208,lon:-42.3300, tipo:'Município'}, 
+  {nome:'Rosário da Limeira',lat:-20.9830,lon:-42.5170, tipo:'Município'},
+  {nome:'Sericita',lat:-20.4733,lon:-42.4817, tipo:'Município'}, 
+  {nome:'Belisário',lat:-20.9261,lon:-42.4588,muni:'Muriaé', tipo:'Distrito'},
+  {nome:'São Domingos',lat:-20.7501,lon:-42.5294,muni:'Araponga', tipo:'Distrito'}, 
+  {nome:'Santo Antônio da Ventania',lat:-20.9559,lon:-42.6019,muni:'Ervália', tipo:'Distrito'},
+  {nome:'Careço',lat:-20.8435,lon:-42.5388,muni:'Ervália', tipo:'Distrito'}, 
+  {nome:'Estevão de Araújo',lat:-20.6100,lon:-42.5360,muni:'Araponga', tipo:'Distrito'},
+  {nome:'São Vicente do Grama',lat:-20.5070,lon:-42.5250,muni:'Jequeri', tipo:'Distrito'}, 
+  {nome:'Ribeirão de São Domingos',lat:-20.4660,lon:-42.2830,muni:'Santa Margarida', tipo:'Distrito'},
+  {nome:'Bom Jesus do Divino',lat:-20.5980,lon:-42.2650,muni:'Divino', tipo:'Distrito'}, 
+  {nome:'São Pedro do Glória',lat:-20.7090,lon:-42.3700,muni:'Fervedouro', tipo:'Distrito'},
+  {nome:'Bom Jesus do Madeira',lat:-20.7237,lon:-42.4236,muni:'Fervedouro', tipo:'Distrito'}, 
+  {nome:'Santa Cruz do Monte Alverne',lat:-20.7817,lon:-42.4372,muni:'Miradouro', tipo:'Distrito'},
+  {nome:'Dom Viçoso',lat:-20.77931,lon:-42.5127,muni:'Ervália', tipo:'Distrito'}
+];
+
+// IDs dos 12 Municípios no IBGE: 
+// Araponga(3103405), Divino(3122108), Canaã(3111101), Ervália(3124005), Fervedouro(3125952), 
+// Miradouro(3142205), Muriaé(3143906), Pedra Bonita(3148707), Jequeri(3135407), 
+// Santa Margarida(3158003), Sericita(3166907), Orizânia(3145877)
+const muniIds = ['3103405', '3122108', '3111101', '3124005', '3125952', '3142205', '3143906', '3148707', '3135407', '3158003', '3166907', '3145877'];
+let allowedMuniFeatures = [];
+
+// Busca as geometrias dos 12 municípios no IBGE
+async function fetchMuniMalhas() {
+  if (allowedMuniFeatures.length > 0) return;
+  const cached = lsGet('muni_malhas_v3');
+  if (cached && Array.isArray(cached) && cached.length === muniIds.length) {
+    allowedMuniFeatures = cached;
+    return;
+  }
+  try {
+    const promises = muniIds.map(id => 
+      fetch(`https://servicodados.ibge.gov.br/api/v3/malhas/municipios/${id}?formato=application/vnd.geo+json`).then(r => r.ok ? r.json() : null)
+    );
+    const results = await Promise.all(promises);
+    let features = [];
+    results.forEach(data => {
+      if (data && data.features && data.features.length > 0) {
+        features.push(data.features[0]);
+      }
+    });
+    if (features.length > 0) {
+      allowedMuniFeatures = features;
+      if (features.length === muniIds.length) {
+        lsSet('muni_malhas_v3', allowedMuniFeatures);
+      }
+    }
+  } catch(e) {
+    console.warn("Aviso: Falha ao carregar malhas do IBGE. O filtro por limite municipal usará aproximação:", e);
+  }
+}
+
+function pointInGeoJSONPolygon(point, coords) {
+  let x = point[1], y = point[0]; 
+  let inside = false;
+  for (let ring of coords) {
+    let ringInside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      let xi = ring[i][0], yi = ring[i][1];
+      let xj = ring[j][0], yj = ring[j][1];
+      let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      if (intersect) ringInside = !ringInside;
+    }
+    if (ringInside) inside = !inside;
+  }
+  return inside;
+}
+
+function isPointInAllowedMunis(lat, lon) {
+  if (allowedMuniFeatures.length === 0) return true;
+  let point = [lat, lon];
+  for (let feature of allowedMuniFeatures) {
+    let geom = feature.geometry;
+    if (geom.type === 'Polygon') {
+      if (pointInGeoJSONPolygon(point, geom.coordinates)) return true;
+    } else if (geom.type === 'MultiPolygon') {
+      for (let polyCoords of geom.coordinates) {
+        if (pointInGeoJSONPolygon(point, polyCoords)) return true;
+      }
+    }
+  }
+  return false;
+}
 
 const polyPESB = [
   [-20.77108,-42.49364],[-20.77739,-42.49402],[-20.77822,-42.49025],[-20.78154,-42.48886],[-20.79459,-42.48839],
@@ -653,9 +770,9 @@ const polyZA = [
   [-20.85049,-42.38166],[-20.84854,-42.38141],[-20.84658,-42.3812],[-20.84461,-42.38105],[-20.84264,-42.38093],
   [-20.84067,-42.38087],[-20.8387,-42.38084],[-20.83832,-42.38085],[-20.8367,-42.38002],[-20.8349,-42.37916],
   [-20.83309,-42.37833],[-20.83126,-42.37755],[-20.82942,-42.37682],[-20.82756,-42.37612],[-20.82569,-42.37547],
-  [-20.8238,-42.37487],[-20.8219,-42.3743],[-20.81999,-42.37378],[-20.81807,-42.37331],[-20.81614,-42.37288],
+  [-20.8219,-42.3743],[-20.81999,-42.37378],[-20.81807,-42.37331],[-20.81614,-42.37288],
   [-20.81421,-42.37249],[-20.81226,-42.37215],[-20.81031,-42.37186],[-20.80836,-42.37161],[-20.80639,-42.3714],
-  [-20.80443,-42.37125],[-20.80246,-42.37113],[-20.80049,-42.37107],[-20.79853,-42.37104],[-20.79744,-42.37036],
+  [-20.80246,-42.37113],[-20.80049,-42.37107],[-20.79853,-42.37104],[-20.79744,-42.37036],
   [-20.79573,-42.36933],[-20.79399,-42.36834],[-20.79223,-42.3674],[-20.79045,-42.36649],[-20.78866,-42.36563],
   [-20.78684,-42.36481],[-20.78502,-42.36403],[-20.78317,-42.36329],[-20.78131,-42.3626],[-20.77944,-42.36194],
   [-20.77565,-42.36077],[-20.77375,-42.36026],[-20.77183,-42.35978],[-20.7699,-42.35935],[-20.76796,-42.35897],
@@ -725,11 +842,11 @@ tileLayers.street.addTo(map);
 
 const layerPESB = L.polygon(polyPESB, {
   color: '#22c55e', weight: 2, fillOpacity: 0
-}).addTo(map).bindPopup("<b>Parque Estadual Serra do Brigadeiro</b><br>Limiar de Alerta: ≥ 0.1 MW");
+}).addTo(map);
 
 const layerZA = L.polygon([polyZA, polyPESB], {
   color: '#22c55e', weight: 2, fillOpacity: 0, dashArray: '5, 5'
-}).addTo(map).bindPopup("<b>Zona de Amortecimento (PESB)</b><br>Limiar de Alerta: ≥ 5.0 MW");
+}).addTo(map);
 
 const fireLayer = L.layerGroup().addTo(map);
 
@@ -762,39 +879,36 @@ function setMapLayer(layerType) {
   currentLayer = layerType;
 }
 
-var localidades = [
-  {nome:'Araponga',lat:-20.6706,lon:-42.5131, tipo:'Município'}, {nome:'Divino',lat:-20.6144,lon:-42.1486, tipo:'Município'},
-  {nome:'Ervália',lat:-20.8403,lon:-42.6522, tipo:'Município'}, {nome:'Fervedouro',lat:-20.7277,lon:-42.2790, tipo:'Município'},
-  {nome:'Miradouro',lat:-20.8908,lon:-42.3428, tipo:'Município'}, {nome:'Muriaé',lat:-21.1306,lon:-42.3664, tipo:'Município'},
-  {nome:'Pedra Bonita',lat:-20.5208,lon:-42.3300, tipo:'Município'}, {nome:'Rosário da Limeira',lat:-20.9830,lon:-42.5170, tipo:'Município'},
-  {nome:'Sericita',lat:-20.4733,lon:-42.4817, tipo:'Município'}, {nome:'Belisário',lat:-20.9261,lon:-42.4588,muni:'Muriaé', tipo:'Distrito'},
-  {nome:'São Domingos',lat:-20.7501,lon:-42.5294,muni:'Araponga', tipo:'Distrito'}, {nome:'Santo Antônio da Ventania',lat:-20.9559,lon:-42.6019,muni:'Ervália', tipo:'Distrito'},
-  {nome:'Careço',lat:-20.8435,lon:-42.5388,muni:'Ervália', tipo:'Distrito'}, {nome:'Estevão de Araújo',lat:-20.6100,lon:-42.5360,muni:'Araponga', tipo:'Distrito'},
-  {nome:'São Vicente do Grama',lat:-20.5070,lon:-42.5250,muni:'Jequeri', tipo:'Distrito'}, {nome:'Ribeirão de São Domingos',lat:-20.4660,lon:-42.2830,muni:'Santa Margarida', tipo:'Distrito'},
-  {nome:'Bom Jesus do Divino',lat:-20.5980,lon:-42.2650,muni:'Divino', tipo:'Distrito'}, {nome:'São Pedro do Glória',lat:-20.7090,lon:-42.3700,muni:'Fervedouro', tipo:'Distrito'},
-  {nome:'Bom Jesus do Madeira',lat:-20.7237,lon:-42.4236,muni:'Fervedouro', tipo:'Distrito'}, {nome:'Santa Cruz do Monte Alverne',lat:-20.7817,lon:-42.4372,muni:'Miradouro', tipo:'Distrito'},
-  {nome:'Dom Viçoso',lat:-20.77931,lon:-42.5127,muni:'Ervália', tipo:'Distrito'}
-];
-
 async function loadAllData() {
-  const btn = document.getElementById('refreshBtn'); btn.classList.add('loading'); btn.innerText = 'Buscando...';
+  const btn = document.getElementById('refreshBtn'); 
+  btn.classList.add('loading'); 
+  btn.innerText = 'Buscando...';
   document.getElementById('loadingOverlay').classList.remove('hidden');
+  
   try {
+    await fetchMuniMalhas().catch(e => console.warn("Não foi possível carregar malhas do IBGE:", e));
     await Promise.all([fetchWeatherData(), fetchFirmsData()]);
     document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString('pt-BR');
     if(windEnabled) updateWindData(); 
-  } catch (error) { console.error("Erro ao carregar dados táticos:", error); } finally {
-    btn.classList.remove('loading'); btn.innerText = 'Atualizar Dados';
+  } catch (error) { 
+    console.error("Erro ao carregar dados táticos:", error); 
+  } finally {
+    btn.classList.remove('loading'); 
+    btn.innerText = 'Atualizar Dados';
     document.getElementById('loadingOverlay').classList.add('hidden');
     if(!windCanvas) initWindCanvas(); 
   }
 }
 
 async function fetchWeatherData() {
-  const lats = localidades.map(l => l.lat).join(','); const lons = localidades.map(l => l.lon).join(',');
+  const lats = localidades.map(l => l.lat).join(','); 
+  const lons = localidades.map(l => l.lon).join(',');
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m&daily=precipitation_sum&past_days=92&forecast_days=1&timezone=America%2FSao_Paulo`;
-  const response = await fetch(url); const data = await response.json();
+  
+  const response = await fetch(url); 
+  const data = await response.json();
   let riscoSoma = 0, fmaSoma = 0;
+  
   localidades.forEach((local, index) => {
     const locData = Array.isArray(data) ? data[index] : data;
     const temp = locData.current.temperature_2m, umidade = locData.current.relative_humidity_2m, vento = locData.current.wind_speed_10m, ventoDir = locData.current.wind_direction_10m;
@@ -810,27 +924,119 @@ async function fetchWeatherData() {
   renderCards();
 }
 
+async function setFirmsPeriod(days) { 
+  firmsPeriod = days; 
+  document.querySelectorAll('.firms-btn').forEach(b => b.classList.remove('active')); 
+  const activeBtn = document.getElementById('firms' + days + 'h');
+  if (activeBtn) activeBtn.classList.add('active'); 
+  
+  document.getElementById('loadingOverlay').classList.remove('hidden');
+  try {
+    await fetchFirmsData(); 
+  } finally {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+  }
+}
+
 async function fetchFirmsData() {
   fireLayer.clearLayers(); 
-  if (firmsCache[firmsPeriod] !== null) { processFirmsCSV(firmsCache[firmsPeriod]); return; }
-  const days = firmsPeriod === 0 ? 1 : firmsPeriod, bbox = "-42.8,-21.2,-42.0,-20.4", url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_SNPP_NRT/${bbox}/${days}`;
-  try { const response = await fetch(url); const csvText = await response.text(); firmsCache[firmsPeriod] = csvText; processFirmsCSV(csvText);
-  } catch (e) { console.warn("Erro FIRMS:", e); }
+  if (firmsCache[firmsPeriod] !== null) { 
+    processFirmsCSV(firmsCache[firmsPeriod]); 
+    return; 
+  }
+  
+  const days = firmsPeriod === 0 ? 1 : firmsPeriod;
+  const bbox = "-42.8,-21.2,-42.0,-20.4";
+  const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_SNPP_NRT/${bbox}/${days}`;
+  
+  try { 
+    const response = await fetch(url); 
+    const csvText = await response.text(); 
+    
+    if (!response.ok || csvText.includes("Invalid") || csvText.includes("Exception") || csvText.includes("Error")) {
+      console.error("Erro na API NASA FIRMS:", csvText);
+      document.getElementById('firmsInfo').innerText = "⚠️ Erro na API FIRMS (Verifique a Chave MAP_KEY)";
+      document.getElementById('fireCount').innerText = '0';
+      document.getElementById('fireFrp').innerText = '0';
+      fireDataList = [];
+      renderFireList();
+      return;
+    }
+    
+    document.getElementById('firmsInfo').innerText = "Dados MODIS/VIIRS - NASA FIRMS";
+    firmsCache[firmsPeriod] = csvText; 
+    processFirmsCSV(csvText);
+  } catch (e) { 
+    console.warn("Erro ao buscar FIRMS:", e); 
+    document.getElementById('firmsInfo').innerText = "⚠️ Falha de conexão com NASA FIRMS";
+  }
+}
+
+function formatFirmsDateTime(dateStr, timeStr) {
+  if (!dateStr) return "Data N/A";
+  let h = "00", m = "00";
+  if (timeStr) {
+    let t = timeStr.padStart(4, '0');
+    h = t.substring(0, 2);
+    m = t.substring(2, 4);
+  }
+  let dateObj = new Date(`${dateStr}T${h}:${m}:00Z`);
+  return dateObj.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function processFirmsCSV(csvText) {
+  if (!csvText) return;
   const lines = csvText.trim().split('\n');
-  if (lines.length <= 1) { document.getElementById('fireCount').innerText = '0'; document.getElementById('fireFrp').innerText = '0'; return; }
-  const headers = lines[0].split(','), latIdx = headers.indexOf('latitude'), lonIdx = headers.indexOf('longitude'), frpIdx = headers.indexOf('frp');
+  fireDataList = [];
+  
+  if (lines.length <= 1) { 
+    document.getElementById('fireCount').innerText = '0'; 
+    document.getElementById('fireFrp').innerText = '0'; 
+    renderFireList();
+    return; 
+  }
+  
+  // O replace(/[^\x20-\x7E]/g, '') remove caracteres invisíveis (como BOM) que podem quebrar o index
+  const headers = lines[0].replace(/^\uFEFF/, '').trim().split(',');
+  const latIdx = headers.indexOf('latitude');
+  const lonIdx = headers.indexOf('longitude');
+  const frpIdx = headers.indexOf('frp');
+  const dateIdx = headers.indexOf('acq_date');
+  const timeIdx = headers.indexOf('acq_time');
+
+  if (latIdx === -1 || lonIdx === -1) {
+    console.error("Cabeçalho do CSV inválido recebido da NASA FIRMS:", lines[0]);
+    document.getElementById('firmsInfo').innerText = "⚠️ Resposta inválida da API FIRMS";
+    return;
+  }
+
   let totalFrp = 0, count = 0, alarmeAcionado = false;
   
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(','); if (cols.length < 3) continue;
-    const lat = parseFloat(cols[latIdx]), lon = parseFloat(cols[lonIdx]), frp = parseFloat(cols[frpIdx]);
-    totalFrp += frp; count++;
+    const cols = lines[i].split(','); 
+    if (cols.length < 3) continue;
+    
+    const lat = parseFloat(cols[latIdx]);
+    const lon = parseFloat(cols[lonIdx]);
+    const frp = parseFloat(cols[frpIdx]);
+    
+    if (isNaN(lat) || isNaN(lon)) continue;
     
     const inPESB = isPointInPolygon([lat, lon], polyPESB);
     const inZA = !inPESB && isPointInPolygon([lat, lon], polyZA);
+    const inAllowedMuni = isPointInAllowedMunis(lat, lon);
+
+    // REGRA DE SEGURANÇA: Exibe apenas se estiver na lista de municípios
+    // EXCEÇÃO TÁTICA: Exibe sempre que estiver DENTRO do PESB ou da ZA, 
+    // mesmo que o ponto caia em um município de divisa que não estava na sua lista.
+    if (!inAllowedMuni && !inPESB && !inZA) continue;
+
+    const acqDate = dateIdx !== -1 ? cols[dateIdx] : '';
+    const acqTime = timeIdx !== -1 ? cols[timeIdx] : '';
+    const dataHoraBrasilia = formatFirmsDateTime(acqDate, acqTime);
+
+    totalFrp += frp; 
+    count++;
     
     if (inPESB && frp >= 0.1) alarmeAcionado = true;
     if (inZA && frp >= 5.0) alarmeAcionado = true;
@@ -839,18 +1045,66 @@ function processFirmsCSV(csvText) {
     if (inPESB) contextoTatico = '<br><span style="color:var(--risk-extreme); font-weight:800">⚠️ INTERIOR DO PARQUE (PESB)</span>';
     else if (inZA) contextoTatico = '<br><span style="color:var(--risk-high); font-weight:800">⚠️ ZONA DE AMORTECIMENTO (ZA)</span>';
 
-    const isExtreme = frp > 50, markerColor = isExtreme ? '#dc2626' : (frp > 20 ? '#f97316' : '#eab308');
-    L.circleMarker([lat, lon], { radius: isExtreme ? 7 : 4, fillColor: markerColor, color: '#0a0e17', weight: 1, opacity: 1, fillOpacity: 0.9
-    }).bindPopup(`<div class="popup-content"><div class="popup-title">Foco Detectado (VIIRS)</div><div class="popup-metric"><span class="popup-metric-label">FRP (Potência)</span><span class="popup-metric-value" style="color:${markerColor}">${frp} MW</span></div><div class="popup-metric"><span class="popup-metric-label">Lat / Lon</span><span class="popup-metric-value">${lat.toFixed(4)} / ${lon.toFixed(4)}</span></div>${contextoTatico}</div>`).addTo(fireLayer);
+    const markerColor = '#dc2626';
+    const marker = L.circleMarker([lat, lon], { 
+      radius: frp > 50 ? 7 : 5, 
+      fillColor: markerColor, 
+      color: '#ffffff', 
+      weight: 1.5, 
+      opacity: 1, 
+      fillOpacity: 0.9
+    }).bindPopup(`
+      <div class="popup-content">
+        <div class="popup-title">Foco Detectado (VIIRS)</div>
+        <div class="popup-metric"><span class="popup-metric-label">Captura</span><span class="popup-metric-value">${dataHoraBrasilia}</span></div>
+        <div class="popup-metric"><span class="popup-metric-label">FRP (Potência)</span><span class="popup-metric-value" style="color:${markerColor}">${frp} MW</span></div>
+        <div class="popup-metric"><span class="popup-metric-label">Lat / Lon</span><span class="popup-metric-value">${lat.toFixed(4)} / ${lon.toFixed(4)}</span></div>
+        ${contextoTatico}
+      </div>
+    `).addTo(fireLayer);
+
+    fireDataList.push({ lat, lon, frp, dataHora: dataHoraBrasilia, marker });
   }
-  document.getElementById('fireCount').innerText = count; document.getElementById('fireFrp').innerText = count > 0 ? (totalFrp / count).toFixed(1) : '0';
+
+  document.getElementById('fireCount').innerText = count; 
+  document.getElementById('fireFrp').innerText = count > 0 ? (totalFrp / count).toFixed(1) : '0';
   
+  renderFireList();
+
   if (alarmeAcionado) {
     frpAlertAudio.play().catch(e => console.log('Áudio pendente de interação da aba com o usuário'));
   }
 }
 
-function setFirmsPeriod(days){ firmsPeriod=days; document.querySelectorAll('.firms-btn').forEach(function(b){b.classList.remove('active');}); document.getElementById('firms'+days+'h').classList.add('active'); fetchFirmsData(); }
+function renderFireList() {
+  const container = document.getElementById('fireListContainer');
+  container.innerHTML = '';
+  
+  if (fireDataList.length === 0) {
+    container.innerHTML = '<div style="font-size:10px; color:var(--text-muted); text-align:center; padding:6px;">Nenhum foco detectado nos municípios designados.</div>';
+    return;
+  }
+
+  fireDataList.forEach((item, index) => {
+    const el = document.createElement('div');
+    el.className = 'fire-item-card';
+    el.innerHTML = `
+      <div class="fire-item-header">
+        <span>Foco #${index + 1}</span>
+        <span>${item.frp} MW</span>
+      </div>
+      <div class="fire-item-details">
+        <span>🕒 ${item.dataHora}</span>
+        <span>📍 ${item.lat.toFixed(4)}, ${item.lon.toFixed(4)}</span>
+      </div>
+    `;
+    el.onclick = () => {
+      map.setView([item.lat, item.lon], 14);
+      item.marker.openPopup();
+    };
+    container.appendChild(el);
+  });
+}
 
 function calcularRisco(temp,umidade,vento){
   let risco=0;
@@ -865,7 +1119,7 @@ function getRiskColor(risco){
   if(risco>=35)return{bg:'var(--risk-med)',text:'#000',label:'MÉDIO'}; return{bg:'var(--risk-low)',text:'#fff',label:'BAIXO'};
 }
 function calcularFMA(ur13h,chuva24h,fmaOntem){
-  let y; if(ur13h>=85) y=0.0; else if(ur13h>=55) y=(100.0-ur13h)/10.0; else if(ur13h>=30) y=(100.0-ur13h)/5.0; else y=(100.0-ur13h)/2.5;
+  let y; if(ur13h>=85) y=0.0; else if(ur13h>=55) y=(100.0-ur13h)/10.0; else if(ur13h>=30) y=(100.0-ur13h)/2.5; else y=(100.0-ur13h)/2.5;
   let fmaHoje; if(chuva24h<=2.4) fmaHoje=fmaOntem+y; else if(chuva24h<=4.9) fmaHoje=Math.max(0.0,fmaOntem-chuva24h)+y; else if(chuva24h<=9.9) fmaHoje=(fmaOntem*0.7)+y; else fmaHoje=y;
   const classe = fmaHoje<=1.0?'Nulo':fmaHoje<=3.0?'Pequeno':fmaHoje<=8.0?'Medio':fmaHoje<=24.0?'Alto':'Muito Alto'; return{fma:Math.round(fmaHoje*100)/100,classe:classe};
 }
