@@ -250,7 +250,7 @@ button.legend-toggle.open .legend-toggle-icon{transform:rotate(180deg)}
   .toggle-panel-btn {
     display: none;
     position: absolute;
-    bottom: 45px; 
+    bottom: 45px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
@@ -266,7 +266,7 @@ button.legend-toggle.open .legend-toggle-icon{transform:rotate(180deg)}
     transition: all 0.2s;
   }
   .toggle-panel-btn:active { transform: translateX(-50%) scale(0.95); }
-  
+
   #app.panel-hidden .sidebar { display: none; }
   #app.panel-hidden .map-container { height: 100%; }
   #app.panel-hidden .toggle-panel-btn { display: flex; }
@@ -284,6 +284,28 @@ html,body{overscroll-behavior-y:none}
 .gps-btn {background:var(--accent-blue); color:white; border-color:var(--accent-blue); margin-bottom:10px; font-weight:800; font-size:12px;}
 .gps-btn.loading {opacity: 0.7; pointer-events:none; animation: pulseGps 1s infinite;}
 @keyframes pulseGps { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+/* Ícone Direcional de Bússola */
+.gps-dir-icon {
+  position: relative;
+  width: 20px; height: 20px;
+  background: var(--accent-blue);
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  transition: transform 0.1s linear;
+  z-index: 1000;
+}
+.gps-dir-icon::after {
+  content: '';
+  position: absolute;
+  top: -8px; left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid var(--risk-extreme);
+}
 </style>
 </head>
 <body>
@@ -307,7 +329,7 @@ html,body{overscroll-behavior-y:none}
 
   <main class="main-content">
     <aside class="sidebar">
-      
+
       <!-- 1. FOCOS DE CALOR (FIRMS) -->
       <div class="sidebar-section">
         <button class="hide-mobile-btn" onclick="toggleMobilePanel()">🙈 Ocultar Painel no Mapa</button>
@@ -320,11 +342,11 @@ html,body{overscroll-behavior-y:none}
             <div class="fire-stat" onclick="toggleFireList()"><div class="fire-stat-value" id="fireCount">-</div><div class="fire-stat-label">Focos Detectados ▼</div></div>
             <div class="fire-stat"><div class="fire-stat-value" id="fireFrp">-</div><div class="fire-stat-label">FRP Médio (MW)</div></div>
           </div>
-          
+
           <div class="fire-list-container" id="fireListContainer"></div>
 
           <div style="margin-top:10px;font-size:10px;color:var(--text-dark-muted);text-align:center" id="firmsInfo">Dados VIIRS (SNPP e NOAA-20) - NASA FIRMS</div>
-          
+
           <button class="legend-toggle" id="frpLegendToggle" aria-expanded="false" onclick="toggleFRPLegend()">
             <span class="legend-toggle-text">O que é FRP?</span>
             <span class="legend-toggle-icon" id="frpLegendToggleIcon">&#9662;</span>
@@ -407,7 +429,7 @@ html,body{overscroll-behavior-y:none}
 
     <section class="map-container">
       <div id="map"></div>
-      
+
       <button class="toggle-panel-btn" id="btnTogglePanel" onclick="toggleMobilePanel()" aria-label="Mostrar Painel de Dados">📋 Mostrar Painel</button>
 
       <div class="map-controls">
@@ -417,17 +439,19 @@ html,body{overscroll-behavior-y:none}
         <button class="map-control-btn" id="btnTopo" onclick="setMapLayer('topo')" aria-label="Camada Topográfica">Topográfico</button>
         <button class="map-control-btn" id="btnWind" onclick="toggleWindAnimation()" aria-label="Camada de Vento">Vento</button>
       </div>
-      
+
       <div class="firms-controls" style="position:absolute;bottom:10px;right:10px;display:flex;gap:4px;z-index:500">
-        <button class="map-control-btn firms-btn active" id="firms0h" onclick="setFirmsPeriod(0)" aria-label="Focos Atuais">Atual</button>
+        <button class="map-control-btn firms-btn active" id="firms1h" onclick="setFirmsPeriod(1)" aria-label="Focos 24h">24h</button>
+        <button class="map-control-btn firms-btn" id="firms2h" onclick="setFirmsPeriod(2)" aria-label="Focos 48h">48h</button>
+        <button class="map-control-btn firms-btn" id="firms3h" onclick="setFirmsPeriod(3)" aria-label="Focos 72h">72h</button>
       </div>
-      
+
       <div class="wind-legend" id="windLegend" style="display:none">
         <div class="wind-legend-title">Vento (km/h)</div>
         <div class="wind-legend-bar"></div>
         <div class="wind-legend-labels"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>60</span></div>
       </div>
-      
+
       <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div class="loading-text" id="loadingText">Processando dados táticos...</div></div>
     </section>
 
@@ -495,30 +519,44 @@ const MAP_KEY = 'e4885bf7243f30d6f28a805f4d70daea';
 let map, currentLayer = 'street';
 let weatherData = {}, fireDataList = [];
 
-let firmsPeriod = 0; 
-const firmsCache = { 0: null, 1: null, 2: null, 3: null }; 
-const frpAlertAudio = new Audio('./assets/alert.m4a'); 
+let firmsPeriod = 1;
+const firmsCache = { 1: null, 2: null, 3: null };
+const frpAlertAudio = new Audio('./assets/alert.m4a');
+
+let userHeading = 0;
+let compassActive = false;
+
+function handleOrientation(event) {
+  if (event.webkitCompassHeading) {
+    userHeading = event.webkitCompassHeading;
+  } else if (event.alpha !== null) {
+    userHeading = 360 - event.alpha;
+  }
+
+  const arrow = document.getElementById('gps-arrow');
+  if (arrow) arrow.style.transform = `rotate(${userHeading}deg)`;
+}
 
 var localidades = [
-  {nome:'Araponga',lat:-20.6706,lon:-42.5131, tipo:'Município'}, 
+  {nome:'Araponga',lat:-20.6706,lon:-42.5131, tipo:'Município'},
   {nome:'Divino',lat:-20.6144,lon:-42.1486, tipo:'Município'},
-  {nome:'Ervália',lat:-20.8403,lon:-42.6522, tipo:'Município'}, 
+  {nome:'Ervália',lat:-20.8403,lon:-42.6522, tipo:'Município'},
   {nome:'Fervedouro',lat:-20.7277,lon:-42.2790, tipo:'Município'},
-  {nome:'Miradouro',lat:-20.8908,lon:-42.3428, tipo:'Município'}, 
+  {nome:'Miradouro',lat:-20.8908,lon:-42.3428, tipo:'Município'},
   {nome:'Muriaé',lat:-21.1306,lon:-42.3664, tipo:'Município'},
-  {nome:'Pedra Bonita',lat:-20.5208,lon:-42.3300, tipo:'Município'}, 
+  {nome:'Pedra Bonita',lat:-20.5208,lon:-42.3300, tipo:'Município'},
   {nome:'Rosário da Limeira',lat:-20.9830,lon:-42.5170, tipo:'Município'},
-  {nome:'Sericita',lat:-20.4733,lon:-42.4817, tipo:'Município'}, 
+  {nome:'Sericita',lat:-20.4733,lon:-42.4817, tipo:'Município'},
   {nome:'Belisário',lat:-20.9261,lon:-42.4588,muni:'Muriaé', tipo:'Distrito'},
-  {nome:'São Domingos',lat:-20.7501,lon:-42.5294,muni:'Araponga', tipo:'Distrito'}, 
+  {nome:'São Domingos',lat:-20.7501,lon:-42.5294,muni:'Araponga', tipo:'Distrito'},
   {nome:'Santo Antônio da Ventania',lat:-20.9559,lon:-42.6019,muni:'Ervália', tipo:'Distrito'},
-  {nome:'Careço',lat:-20.8435,lon:-42.5388,muni:'Ervália', tipo:'Distrito'}, 
+  {nome:'Careço',lat:-20.8435,lon:-42.5388,muni:'Ervália', tipo:'Distrito'},
   {nome:'Estevão de Araújo',lat:-20.6100,lon:-42.5360,muni:'Araponga', tipo:'Distrito'},
-  {nome:'São Vicente do Grama',lat:-20.5070,lon:-42.5250,muni:'Jequeri', tipo:'Distrito'}, 
+  {nome:'São Vicente do Grama',lat:-20.5070,lon:-42.5250,muni:'Jequeri', tipo:'Distrito'},
   {nome:'Ribeirão de São Domingos',lat:-20.4660,lon:-42.2830,muni:'Santa Margarida', tipo:'Distrito'},
-  {nome:'Bom Jesus do Divino',lat:-20.5980,lon:-42.2650,muni:'Divino', tipo:'Distrito'}, 
+  {nome:'Bom Jesus do Divino',lat:-20.5980,lon:-42.2650,muni:'Divino', tipo:'Distrito'},
   {nome:'São Pedro do Glória',lat:-20.7090,lon:-42.3700,muni:'Fervedouro', tipo:'Distrito'},
-  {nome:'Bom Jesus do Madeira',lat:-20.7237,lon:-42.4236,muni:'Fervedouro', tipo:'Distrito'}, 
+  {nome:'Bom Jesus do Madeira',lat:-20.7237,lon:-42.4236,muni:'Fervedouro', tipo:'Distrito'},
   {nome:'Santa Cruz do Monte Alverne',lat:-20.7817,lon:-42.4372,muni:'Miradouro', tipo:'Distrito'},
   {nome:'Dom Viçoso',lat:-20.77931,lon:-42.5127,muni:'Ervália', tipo:'Distrito'}
 ];
@@ -534,7 +572,7 @@ async function fetchMuniMalhas() {
     return;
   }
   try {
-    const promises = muniIds.map(id => 
+    const promises = muniIds.map(id =>
       fetch(`https://servicodados.ibge.gov.br/api/v3/malhas/municipios/${id}?formato=application/vnd.geo+json`).then(r => r.ok ? r.json() : null)
     );
     const results = await Promise.all(promises);
@@ -556,7 +594,7 @@ async function fetchMuniMalhas() {
 }
 
 function pointInGeoJSONPolygon(point, coords) {
-  let x = point[1], y = point[0]; 
+  let x = point[1], y = point[0];
   let inside = false;
   for (let ring of coords) {
     let ringInside = false;
@@ -842,25 +880,56 @@ const layerZA = L.polygon([polyZA, polyPESB], {
 const fireLayer = L.layerGroup().addTo(map);
 
 var gpsMarker, gpsCircle, watchId;
-function locateUser() {
+
+async function locateUser() {
   const btn = document.getElementById('btnGps');
+
+  // Solicitação de permissão de bússola (Obrigatório no iOS 13+)
+  if (!compassActive) {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const permissionState = await DeviceOrientationEvent.requestPermission();
+        if (permissionState === 'granted') {
+          window.addEventListener('deviceorientation', handleOrientation);
+          compassActive = true;
+        } else {
+          alert("Permissão para bússola negada.");
+        }
+      } catch (e) { console.error(e); }
+    } else {
+      // Android ou iOS antigo
+      window.addEventListener('deviceorientationabsolute', handleOrientation);
+      window.addEventListener('deviceorientation', handleOrientation);
+      compassActive = true;
+    }
+  }
+
   if (navigator.geolocation) {
     btn.classList.add('loading'); btn.innerText = 'Buscando GPS...';
-    
+
     // Cancela o rastreamento anterior para evitar duplicatas
     if (watchId) navigator.geolocation.clearWatch(watchId);
 
     watchId = navigator.geolocation.watchPosition(function(pos) {
       btn.classList.remove('loading'); btn.innerText = '📍 Rastreando...';
       const lat = pos.coords.latitude, lon = pos.coords.longitude, accuracy = pos.coords.accuracy;
-      
+
       if (gpsMarker) { map.removeLayer(gpsMarker); map.removeLayer(gpsCircle); }
-      
+
       gpsCircle = L.circle([lat, lon], {radius: accuracy, color: 'var(--accent-blue)', fillOpacity: 0.2}).addTo(map);
-      gpsMarker = L.marker([lat, lon]).addTo(map).bindPopup("<b>Sua localização atual</b><br>Precisão: " + Math.round(accuracy) + " metros.");
-      
+
+      // Cria o ícone com a div injetada girando no ângulo atual
+      const dirIcon = L.divIcon({
+        className: 'custom-gps-marker',
+        html: `<div id="gps-arrow" class="gps-dir-icon" style="transform: rotate(${userHeading}deg)"></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+
+      gpsMarker = L.marker([lat, lon], {icon: dirIcon}).addTo(map).bindPopup("<b>Sua posição (Bússola Ativa)</b>");
+
       // Mantém o zoom atual em vez de forçar o nível 14 a cada movimento
-      map.setView([lat, lon], map.getZoom()); 
+      map.setView([lat, lon], map.getZoom());
     }, function(err) {
       btn.classList.remove('loading'); btn.innerText = '📍 Ativar GPS';
       alert("Erro ao acessar o GPS dinâmico.");
@@ -880,42 +949,42 @@ function setMapLayer(layerType) {
 }
 
 async function loadAllData() {
-  const btn = document.getElementById('refreshBtn'); 
-  btn.classList.add('loading'); 
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('loading');
   btn.innerText = 'Buscando...';
   document.getElementById('loadingOverlay').classList.remove('hidden');
-  
+
   try {
     await fetchMuniMalhas().catch(e => console.warn("Não foi possível carregar malhas do IBGE:", e));
     await Promise.all([fetchWeatherData(), fetchFirmsData()]);
     document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString('pt-BR');
-    if(windEnabled) updateWindData(); 
-  } catch (error) { 
-    console.error("Erro ao carregar dados táticos:", error); 
+    if(windEnabled) updateWindData();
+  } catch (error) {
+    console.error("Erro ao carregar dados táticos:", error);
   } finally {
-    btn.classList.remove('loading'); 
+    btn.classList.remove('loading');
     btn.innerText = 'Atualizar Dados';
     document.getElementById('loadingOverlay').classList.add('hidden');
-    if(!windCanvas) initWindCanvas(); 
+    if(!windCanvas) initWindCanvas();
   }
 }
 
 async function fetchWeatherData() {
-  const lats = localidades.map(l => l.lat).join(','); 
+  const lats = localidades.map(l => l.lat).join(',');
   const lons = localidades.map(l => l.lon).join(',');
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m&daily=precipitation_sum&past_days=92&forecast_days=1&timezone=America%2FSao_Paulo`;
-  
-  const response = await fetch(url); 
+
+  const response = await fetch(url);
   const data = await response.json();
   let riscoSoma = 0, fmaSoma = 0;
-  
+
   localidades.forEach((local, index) => {
     const locData = Array.isArray(data) ? data[index] : data;
     const temp = locData.current.temperature_2m, umidade = locData.current.relative_humidity_2m, vento = locData.current.wind_speed_10m, ventoDir = locData.current.wind_direction_10m;
-    const chuvas = locData.daily.precipitation_sum, idxHoje = chuvas.length - 1, chuva24h = chuvas[idxHoje] || 0; 
+    const chuvas = locData.daily.precipitation_sum, idxHoje = chuvas.length - 1, chuva24h = chuvas[idxHoje] || 0;
     let diasEstiagem = 0;
     for (let i = idxHoje; i >= 0; i--) { if (chuvas[i] >= 2.5) break; diasEstiagem++; }
-    const fmaOntem = lsGet(`fma_${local.nome}`) || 5.0, calculoFMA = calcularFMA(umidade, chuva24h, fmaOntem); lsSet(`fma_${local.nome}`, calculoFMA.fma); 
+    const fmaOntem = lsGet(`fma_${local.nome}`) || 5.0, calculoFMA = calcularFMA(umidade, chuva24h, fmaOntem); lsSet(`fma_${local.nome}`, calculoFMA.fma);
     const riscoCombate = calcularRisco(temp, umidade, vento);
     weatherData[local.nome] = { temp, umidade, vento, ventoDir, chuva24h, risco: riscoCombate, fma: calculoFMA.fma, diasEstiagem: diasEstiagem };
     riscoSoma += riscoCombate; fmaSoma += calculoFMA.fma;
@@ -924,40 +993,40 @@ async function fetchWeatherData() {
   renderCards();
 }
 
-async function setFirmsPeriod(days) { 
-  firmsPeriod = days; 
-  document.querySelectorAll('.firms-btn').forEach(b => b.classList.remove('active')); 
+async function setFirmsPeriod(days) {
+  firmsPeriod = days;
+  document.querySelectorAll('.firms-btn').forEach(b => b.classList.remove('active'));
   const activeBtn = document.getElementById('firms' + days + 'h');
-  if (activeBtn) activeBtn.classList.add('active'); 
-  
+  if (activeBtn) activeBtn.classList.add('active');
+
   document.getElementById('loadingOverlay').classList.remove('hidden');
   try {
-    await fetchFirmsData(); 
+    await fetchFirmsData();
   } finally {
     document.getElementById('loadingOverlay').classList.add('hidden');
   }
 }
 
 async function fetchFirmsData() {
-  fireLayer.clearLayers(); 
-  if (firmsCache[firmsPeriod] !== null) { 
-    processFirmsCSV(firmsCache[firmsPeriod]); 
-    return; 
+  fireLayer.clearLayers();
+  if (firmsCache[firmsPeriod] !== null) {
+    processFirmsCSV(firmsCache[firmsPeriod]);
+    return;
   }
-  
-  const days = firmsPeriod === 0 ? 1 : firmsPeriod;
+
+  const days = firmsPeriod;
   const bbox = "-42.8,-21.2,-42.0,-20.4";
-  
+
   // URLs para os dois satélites VIIRS (Suomi NPP e NOAA-20)
   const urlSNPP = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_SNPP_NRT/${bbox}/${days}`;
   const urlN20 = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_NOAA20_NRT/${bbox}/${days}`;
-  
-  try { 
+
+  try {
     // Dispara as duas requisições simultaneamente
     const [resSNPP, resN20] = await Promise.all([fetch(urlSNPP), fetch(urlN20)]);
     const csvSNPP = await resSNPP.text();
     const csvN20 = await resN20.text();
-    
+
     // Validação da resposta principal (SNPP)
     if (!resSNPP.ok || csvSNPP.includes("Invalid") || csvSNPP.includes("Exception") || csvSNPP.includes("Error")) {
       console.error("Erro na API NASA FIRMS (SNPP):", csvSNPP);
@@ -968,7 +1037,7 @@ async function fetchFirmsData() {
       renderFireList();
       return;
     }
-    
+
     let combinedCSV = csvSNPP;
 
     // Se a resposta do N20 for válida, removemos o cabeçalho e fundimos com a do SNPP
@@ -979,13 +1048,13 @@ async function fetchFirmsData() {
         combinedCSV += '\n' + linesN20.join('\n');
       }
     }
-    
+
     document.getElementById('firmsInfo').innerText = "Dados VIIRS (SNPP e NOAA-20) - NASA FIRMS";
-    firmsCache[firmsPeriod] = combinedCSV; 
+    firmsCache[firmsPeriod] = combinedCSV;
     processFirmsCSV(combinedCSV);
-    
-  } catch (e) { 
-    console.warn("Erro ao buscar FIRMS:", e); 
+
+  } catch (e) {
+    console.warn("Erro ao buscar FIRMS:", e);
     document.getElementById('firmsInfo').innerText = "⚠️ Falha de conexão com NASA FIRMS";
   }
 }
@@ -1006,14 +1075,14 @@ function processFirmsCSV(csvText) {
   if (!csvText) return;
   const lines = csvText.trim().split('\n');
   fireDataList = [];
-  
-  if (lines.length <= 1) { 
-    document.getElementById('fireCount').innerText = '0'; 
-    document.getElementById('fireFrp').innerText = '0'; 
+
+  if (lines.length <= 1) {
+    document.getElementById('fireCount').innerText = '0';
+    document.getElementById('fireFrp').innerText = '0';
     renderFireList();
-    return; 
+    return;
   }
-  
+
   // O replace(/[^\x20-\x7E]/g, '') remove caracteres invisíveis (como BOM) que podem quebrar o index
   const headers = lines[0].replace(/^\uFEFF/, '').trim().split(',');
   const latIdx = headers.indexOf('latitude');
@@ -1030,23 +1099,23 @@ function processFirmsCSV(csvText) {
   }
 
   let totalFrp = 0, count = 0, alarmeAcionado = false;
-  
+
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(','); 
+    const cols = lines[i].split(',');
     if (cols.length < 3) continue;
-    
+
     const lat = parseFloat(cols[latIdx]);
     const lon = parseFloat(cols[lonIdx]);
     const frp = parseFloat(cols[frpIdx]);
-    
+
     if (isNaN(lat) || isNaN(lon)) continue;
-    
+
     const inPESB = isPointInPolygon([lat, lon], polyPESB);
     const inZA = !inPESB && isPointInPolygon([lat, lon], polyZA);
     const inAllowedMuni = isPointInAllowedMunis(lat, lon);
 
     // REGRA DE SEGURANÇA: Exibe apenas se estiver na lista de municípios
-    // EXCEÇÃO TÁTICA: Exibe sempre que estiver DENTRO do PESB ou da ZA, 
+    // EXCEÇÃO TÁTICA: Exibe sempre que estiver DENTRO do PESB ou da ZA,
     // mesmo que o ponto caia em um município de divisa que não estava na sua lista.
     if (!inAllowedMuni && !inPESB && !inZA) continue;
 
@@ -1061,9 +1130,9 @@ function processFirmsCSV(csvText) {
     else if (rawSat === 'N20') satName = 'NOAA-20';
     else if (!rawSat) satName = 'Desconhecido';
 
-    totalFrp += frp; 
+    totalFrp += frp;
     count++;
-    
+
     if (inPESB && frp >= 0.1) alarmeAcionado = true;
     if (inZA && frp >= 5.0) alarmeAcionado = true;
 
@@ -1072,12 +1141,12 @@ function processFirmsCSV(csvText) {
     else if (inZA) contextoTatico = '<br><span style="color:var(--risk-high); font-weight:800">⚠️ ZONA DE AMORTECIMENTO (ZA)</span>';
 
     const markerColor = '#dc2626';
-    const marker = L.circleMarker([lat, lon], { 
-      radius: frp > 50 ? 7 : 5, 
-      fillColor: markerColor, 
-      color: '#ffffff', 
-      weight: 1.5, 
-      opacity: 1, 
+    const marker = L.circleMarker([lat, lon], {
+      radius: frp > 50 ? 7 : 5,
+      fillColor: markerColor,
+      color: '#ffffff',
+      weight: 1.5,
+      opacity: 1,
       fillOpacity: 0.9
     }).bindPopup(`
       <div class="popup-content">
@@ -1093,9 +1162,9 @@ function processFirmsCSV(csvText) {
     fireDataList.push({ lat, lon, frp, dataHora: dataHoraBrasilia, marker });
   }
 
-  document.getElementById('fireCount').innerText = count; 
+  document.getElementById('fireCount').innerText = count;
   document.getElementById('fireFrp').innerText = count > 0 ? (totalFrp / count).toFixed(1) : '0';
-  
+
   renderFireList();
 
   if (alarmeAcionado) {
@@ -1106,7 +1175,7 @@ function processFirmsCSV(csvText) {
 function renderFireList() {
   const container = document.getElementById('fireListContainer');
   container.innerHTML = '';
-  
+
   if (fireDataList.length === 0) {
     container.innerHTML = '<div style="font-size:10px; color:var(--text-muted); text-align:center; padding:6px;">Nenhum foco detectado nos municípios designados.</div>';
     return;
@@ -1166,7 +1235,7 @@ function atualizarGauges(risco, fma) {
 function renderCards() {
   const localidadesComDados = localidades.map(loc => { return { ...loc, ...weatherData[loc.nome] }; });
   localidadesComDados.sort((a, b) => b.risco - a.risco);
-  const containerLocalidades = document.getElementById('localidadesCards'); containerLocalidades.innerHTML = ''; 
+  const containerLocalidades = document.getElementById('localidadesCards'); containerLocalidades.innerHTML = '';
 
   localidadesComDados.forEach(loc => {
     const riskInfo = getRiskColor(loc.risco), fmaColor = getFMAColor(calcularFMA(0, 0, loc.fma).classe);
@@ -1216,11 +1285,11 @@ function drawParticles(){
 }
 let windFrameSkip=0;
 function animateWind(){ if(!windEnabled)return; windFrameSkip++; if(windFrameSkip%2===0){updateParticles(); drawParticles();} windAnimationId=requestAnimationFrame(animateWind); }
-function startWindAnimation(){ 
-  if(windAnimationId) cancelAnimationFrame(windAnimationId); 
+function startWindAnimation(){
+  if(windAnimationId) cancelAnimationFrame(windAnimationId);
   updateWindData();
-  windFrameSkip=0; windParticles=[]; for(let i=0;i<300;i++)windParticles.push(createParticle()); 
-  windEnabled=true; document.getElementById('windLegend').style.display='block'; document.getElementById('btnWind').classList.add('active'); animateWind(); 
+  windFrameSkip=0; windParticles=[]; for(let i=0;i<300;i++)windParticles.push(createParticle());
+  windEnabled=true; document.getElementById('windLegend').style.display='block'; document.getElementById('btnWind').classList.add('active'); animateWind();
 }
 function stopWindAnimation(){ windEnabled=false; if(windAnimationId)cancelAnimationFrame(windAnimationId); if(windCtx&&windCanvas)windCtx.clearRect(0,0,windCanvas.width,windCanvas.height); document.getElementById('windLegend').style.display='none'; document.getElementById('btnWind').classList.remove('active'); }
 function toggleWindAnimation(){ if(windEnabled){stopWindAnimation();}else{startWindAnimation();} }
