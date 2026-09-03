@@ -323,7 +323,7 @@ html,body{overscroll-behavior-y:none}
           
           <div class="fire-list-container" id="fireListContainer"></div>
 
-          <div style="margin-top:10px;font-size:10px;color:var(--text-dark-muted);text-align:center" id="firmsInfo">Dados MODIS/VIIRS - NASA FIRMS</div>
+          <div style="margin-top:10px;font-size:10px;color:var(--text-dark-muted);text-align:center" id="firmsInfo">Dados VIIRS (SNPP e NOAA-20) - NASA FIRMS</div>
           
           <button class="legend-toggle" id="frpLegendToggle" aria-expanded="false" onclick="toggleFRPLegend()">
             <span class="legend-toggle-text">O que é FRP?</span>
@@ -420,9 +420,6 @@ html,body{overscroll-behavior-y:none}
       
       <div class="firms-controls" style="position:absolute;bottom:10px;right:10px;display:flex;gap:4px;z-index:500">
         <button class="map-control-btn firms-btn active" id="firms0h" onclick="setFirmsPeriod(0)" aria-label="Focos Atuais">Atual</button>
-        <button class="map-control-btn firms-btn" id="firms1h" onclick="setFirmsPeriod(1)" aria-label="Focos 24h">24h</button>
-        <button class="map-control-btn firms-btn" id="firms2h" onclick="setFirmsPeriod(2)" aria-label="Focos 48h">48h</button>
-        <button class="map-control-btn firms-btn" id="firms3h" onclick="setFirmsPeriod(3)" aria-label="Focos 72h">72h</button>
       </div>
       
       <div class="wind-legend" id="windLegend" style="display:none">
@@ -500,9 +497,8 @@ let weatherData = {}, fireDataList = [];
 
 let firmsPeriod = 0; 
 const firmsCache = { 0: null, 1: null, 2: null, 3: null }; 
-const frpAlertAudio = new Audio('./assets/alert.mp3');
+const frpAlertAudio = new Audio('./assets/alert.m4a'); 
 
-// Lista global de localidades para consulta meteorológica
 var localidades = [
   {nome:'Araponga',lat:-20.6706,lon:-42.5131, tipo:'Município'}, 
   {nome:'Divino',lat:-20.6144,lon:-42.1486, tipo:'Município'},
@@ -527,14 +523,9 @@ var localidades = [
   {nome:'Dom Viçoso',lat:-20.77931,lon:-42.5127,muni:'Ervália', tipo:'Distrito'}
 ];
 
-// IDs dos 12 Municípios no IBGE: 
-// Araponga(3103405), Divino(3122108), Canaã(3111101), Ervália(3124005), Fervedouro(3125952), 
-// Miradouro(3142205), Muriaé(3143906), Pedra Bonita(3148707), Jequeri(3135407), 
-// Santa Margarida(3158003), Sericita(3166907), Orizânia(3145877)
 const muniIds = ['3103405', '3122108', '3111101', '3124005', '3125952', '3142205', '3143906', '3148707', '3135407', '3158003', '3166907', '3145877'];
 let allowedMuniFeatures = [];
 
-// Busca as geometrias dos 12 municípios no IBGE
 async function fetchMuniMalhas() {
   if (allowedMuniFeatures.length > 0) return;
   const cached = lsGet('muni_malhas_v3');
@@ -850,24 +841,33 @@ const layerZA = L.polygon([polyZA, polyPESB], {
 
 const fireLayer = L.layerGroup().addTo(map);
 
-var gpsMarker, gpsCircle;
+var gpsMarker, gpsCircle, watchId;
 function locateUser() {
   const btn = document.getElementById('btnGps');
   if (navigator.geolocation) {
     btn.classList.add('loading'); btn.innerText = 'Buscando GPS...';
-    navigator.geolocation.getCurrentPosition(function(pos) {
-      btn.classList.remove('loading'); btn.innerText = '📍 GPS Atualizado';
+    
+    // Cancela o rastreamento anterior para evitar duplicatas
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+
+    watchId = navigator.geolocation.watchPosition(function(pos) {
+      btn.classList.remove('loading'); btn.innerText = '📍 Rastreando...';
       const lat = pos.coords.latitude, lon = pos.coords.longitude, accuracy = pos.coords.accuracy;
+      
       if (gpsMarker) { map.removeLayer(gpsMarker); map.removeLayer(gpsCircle); }
+      
       gpsCircle = L.circle([lat, lon], {radius: accuracy, color: 'var(--accent-blue)', fillOpacity: 0.2}).addTo(map);
-      gpsMarker = L.marker([lat, lon]).addTo(map).bindPopup("<b>Sua localização atual</b><br>Precisão: " + Math.round(accuracy) + " metros.").openPopup();
-      map.setView([lat, lon], 14); 
-      setTimeout(() => btn.innerText = '📍 Ativar GPS', 4000);
+      gpsMarker = L.marker([lat, lon]).addTo(map).bindPopup("<b>Sua localização atual</b><br>Precisão: " + Math.round(accuracy) + " metros.");
+      
+      // Mantém o zoom atual em vez de forçar o nível 14 a cada movimento
+      map.setView([lat, lon], map.getZoom()); 
     }, function(err) {
       btn.classList.remove('loading'); btn.innerText = '📍 Ativar GPS';
-      alert("Erro ao acessar GPS. Verifique a permissão do seu navegador.");
-    }, { enableHighAccuracy: true });
-  } else alert("Geolocalização não suportada.");
+      alert("Erro ao acessar o GPS dinâmico.");
+    }, { enableHighAccuracy: true, maximumAge: 0 });
+  } else {
+    alert("Geolocalização não suportada.");
+  }
 }
 
 function setMapLayer(layerType) {
@@ -947,14 +947,20 @@ async function fetchFirmsData() {
   
   const days = firmsPeriod === 0 ? 1 : firmsPeriod;
   const bbox = "-42.8,-21.2,-42.0,-20.4";
-  const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_SNPP_NRT/${bbox}/${days}`;
+  
+  // URLs para os dois satélites VIIRS (Suomi NPP e NOAA-20)
+  const urlSNPP = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_SNPP_NRT/${bbox}/${days}`;
+  const urlN20 = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_NOAA20_NRT/${bbox}/${days}`;
   
   try { 
-    const response = await fetch(url); 
-    const csvText = await response.text(); 
+    // Dispara as duas requisições simultaneamente
+    const [resSNPP, resN20] = await Promise.all([fetch(urlSNPP), fetch(urlN20)]);
+    const csvSNPP = await resSNPP.text();
+    const csvN20 = await resN20.text();
     
-    if (!response.ok || csvText.includes("Invalid") || csvText.includes("Exception") || csvText.includes("Error")) {
-      console.error("Erro na API NASA FIRMS:", csvText);
+    // Validação da resposta principal (SNPP)
+    if (!resSNPP.ok || csvSNPP.includes("Invalid") || csvSNPP.includes("Exception") || csvSNPP.includes("Error")) {
+      console.error("Erro na API NASA FIRMS (SNPP):", csvSNPP);
       document.getElementById('firmsInfo').innerText = "⚠️ Erro na API FIRMS (Verifique a Chave MAP_KEY)";
       document.getElementById('fireCount').innerText = '0';
       document.getElementById('fireFrp').innerText = '0';
@@ -963,9 +969,21 @@ async function fetchFirmsData() {
       return;
     }
     
-    document.getElementById('firmsInfo').innerText = "Dados MODIS/VIIRS - NASA FIRMS";
-    firmsCache[firmsPeriod] = csvText; 
-    processFirmsCSV(csvText);
+    let combinedCSV = csvSNPP;
+
+    // Se a resposta do N20 for válida, removemos o cabeçalho e fundimos com a do SNPP
+    if (resN20.ok && !csvN20.includes("Invalid") && !csvN20.includes("Error")) {
+      const linesN20 = csvN20.trim().split('\n');
+      if (linesN20.length > 1) {
+        linesN20.shift(); // Remove a linha do cabeçalho
+        combinedCSV += '\n' + linesN20.join('\n');
+      }
+    }
+    
+    document.getElementById('firmsInfo').innerText = "Dados VIIRS (SNPP e NOAA-20) - NASA FIRMS";
+    firmsCache[firmsPeriod] = combinedCSV; 
+    processFirmsCSV(combinedCSV);
+    
   } catch (e) { 
     console.warn("Erro ao buscar FIRMS:", e); 
     document.getElementById('firmsInfo').innerText = "⚠️ Falha de conexão com NASA FIRMS";
@@ -1003,6 +1021,7 @@ function processFirmsCSV(csvText) {
   const frpIdx = headers.indexOf('frp');
   const dateIdx = headers.indexOf('acq_date');
   const timeIdx = headers.indexOf('acq_time');
+  const satIdx = headers.indexOf('satellite');
 
   if (latIdx === -1 || lonIdx === -1) {
     console.error("Cabeçalho do CSV inválido recebido da NASA FIRMS:", lines[0]);
@@ -1035,6 +1054,13 @@ function processFirmsCSV(csvText) {
     const acqTime = timeIdx !== -1 ? cols[timeIdx] : '';
     const dataHoraBrasilia = formatFirmsDateTime(acqDate, acqTime);
 
+    // Captura do nome do satélite
+    let rawSat = satIdx !== -1 ? cols[satIdx] : '';
+    let satName = rawSat;
+    if (rawSat === 'N') satName = 'Suomi NPP';
+    else if (rawSat === 'N20') satName = 'NOAA-20';
+    else if (!rawSat) satName = 'Desconhecido';
+
     totalFrp += frp; 
     count++;
     
@@ -1056,6 +1082,7 @@ function processFirmsCSV(csvText) {
     }).bindPopup(`
       <div class="popup-content">
         <div class="popup-title">Foco Detectado (VIIRS)</div>
+        <div class="popup-metric"><span class="popup-metric-label">Satélite</span><span class="popup-metric-value">${satName}</span></div>
         <div class="popup-metric"><span class="popup-metric-label">Captura</span><span class="popup-metric-value">${dataHoraBrasilia}</span></div>
         <div class="popup-metric"><span class="popup-metric-label">FRP (Potência)</span><span class="popup-metric-value" style="color:${markerColor}">${frp} MW</span></div>
         <div class="popup-metric"><span class="popup-metric-label">Lat / Lon</span><span class="popup-metric-value">${lat.toFixed(4)} / ${lon.toFixed(4)}</span></div>
