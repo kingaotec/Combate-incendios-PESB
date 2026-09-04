@@ -519,8 +519,29 @@ const MAP_KEY = 'e4885bf7243f30d6f28a805f4d70daea';
 let map, currentLayer = 'street';
 let weatherData = {}, fireDataList = [];
 
+// ==========================================
+// 1. INICIALIZAÇÃO DO MAPA (Correção)
+// ==========================================
+map = L.map('map').setView([-20.77108, -42.49365], 11);
+
+// ==========================================
+// 2. DEFINIÇÃO DAS CAMADAS (Correção)
+// ==========================================
+const tileLayers = {
+  street: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }),
+  satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
+  topo: L.tileLayer('https://tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 })
+};
+
+// Adiciona a camada padrão inicial ao mapa
+tileLayers.street.addTo(map);
+
 let firmsPeriod = 1;
 const firmsCache = { 1: null, 2: null, 3: null };
+
+// ==========================================
+// 3. CORREÇÃO DO ÁUDIO PARA O SEU ANEXO (.m4a)
+// ==========================================
 const frpAlertAudio = new Audio('./assets/alert.m4a');
 
 let userHeading = 0;
@@ -619,6 +640,21 @@ function pointInGeoJSONPolygon(point, coords) {
     if (ringInside) inside = !inside;
   }
   return inside;
+}
+
+// =======================================================
+// 4. FUNÇÃO ADICIONAL NECESSÁRIA PARA O CÓDIGO FIRMS
+// =======================================================
+function isPointInPolygon(point, vs) {
+    let x = point[0], y = point[1];
+    let inside = false;
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        let xi = vs[i][0], yi = vs[i][1];
+        let xj = vs[j][0], yj = vs[j][1];
+        let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
 }
 
 function isPointInAllowedMunis(lat, lon) {
