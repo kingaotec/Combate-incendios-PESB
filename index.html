@@ -440,10 +440,11 @@ html,body{overscroll-behavior-y:none}
         <button class="map-control-btn" id="btnWind" onclick="toggleWindAnimation()" aria-label="Camada de Vento">Vento</button>
       </div>
 
+      <!-- BOTÕES ATUALIZADOS PARA RECEBER O PARÂMETRO EM HORAS (24, 48, 72) -->
       <div class="firms-controls" style="position:absolute;bottom:10px;right:10px;display:flex;gap:4px;z-index:500">
-        <button class="map-control-btn firms-btn active" id="firms1h" onclick="setFirmsPeriod(1)" aria-label="Focos 24h">24h</button>
-        <button class="map-control-btn firms-btn" id="firms2h" onclick="setFirmsPeriod(2)" aria-label="Focos 48h">48h</button>
-        <button class="map-control-btn firms-btn" id="firms3h" onclick="setFirmsPeriod(3)" aria-label="Focos 72h">72h</button>
+        <button class="map-control-btn firms-btn active" id="firms24" onclick="setFirmsPeriod(24)" aria-label="Focos 24h">24h</button>
+        <button class="map-control-btn firms-btn" id="firms48" onclick="setFirmsPeriod(48)" aria-label="Focos 48h">48h</button>
+        <button class="map-control-btn firms-btn" id="firms72" onclick="setFirmsPeriod(72)" aria-label="Focos 72h">72h</button>
       </div>
 
       <div class="wind-legend" id="windLegend" style="display:none">
@@ -529,8 +530,9 @@ const tileLayers = {
 
 tileLayers.street.addTo(map);
 
-let firmsPeriod = 1;
-const firmsCache = { 1: null, 2: null, 3: null };
+// NOVO CONTROLE DE PERÍODOS (Horas exatas)
+let firmsPeriodHours = 24;
+const firmsCache = { 24: null, 48: null, 72: null };
 const frpAlertAudio = new Audio('./assets/alert.m4a');
 
 let userHeading = 0;
@@ -972,19 +974,15 @@ async function loadAllData() {
   btn.classList.add('loading');
   btn.innerText = 'Buscando...';
   
-  // Mostra o bloqueio de tela apenas para o carregamento inicial crítico
   document.getElementById('loadingOverlay').classList.remove('hidden');
 
   try {
-    // 1. Carrega IBGE e Clima primeiro (rápido)
     await fetchMuniMalhas().catch(e => console.warn("Não foi possível carregar malhas do IBGE:", e));
     await fetchWeatherData();
     
-    // 2. Libera a interface imediatamente para o usuário não ficar travado
     document.getElementById('loadingOverlay').classList.add('hidden');
     document.getElementById('firmsInfo').innerText = "⏳ Buscando satélites da NASA...";
 
-    // 3. Busca os focos da NASA em segundo plano
     await fetchFirmsData();
     
     document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString('pt-BR');
@@ -994,7 +992,7 @@ async function loadAllData() {
   } finally {
     btn.classList.remove('loading');
     btn.innerText = 'Atualizar Dados';
-    document.getElementById('loadingOverlay').classList.add('hidden'); // Garantia de liberação
+    document.getElementById('loadingOverlay').classList.add('hidden');
     if(!windCanvas) initWindCanvas();
   }
 }
@@ -1023,13 +1021,12 @@ async function fetchWeatherData() {
   renderCards();
 }
 
-async function setFirmsPeriod(days) {
-  firmsPeriod = days;
+async function setFirmsPeriod(hours) {
+  firmsPeriodHours = hours;
   document.querySelectorAll('.firms-btn').forEach(b => b.classList.remove('active'));
-  const activeBtn = document.getElementById('firms' + days + 'h');
+  const activeBtn = document.getElementById('firms' + hours);
   if (activeBtn) activeBtn.classList.add('active');
 
-  // Ao trocar o período de horas, não travamos mais a tela inteira
   document.getElementById('firmsInfo').innerText = "⏳ Atualizando satélites da NASA...";
   const refreshBtn = document.getElementById('refreshBtn');
   refreshBtn.classList.add('loading');
@@ -1041,20 +1038,25 @@ async function setFirmsPeriod(days) {
   }
 }
 
+// ==========================================
+// TRUQUE TÁTICO: CARREGANDO SEMPRE O OVERLAP
+// ==========================================
 async function fetchFirmsData() {
   fireLayer.clearLayers();
-  if (firmsCache[firmsPeriod] !== null) {
-    processFirmsCSV(firmsCache[firmsPeriod]);
+  if (firmsCache[firmsPeriodHours] !== null) {
+    processFirmsCSV(firmsCache[firmsPeriodHours]);
     return;
   }
 
-  const days = firmsPeriod;
+  // Pede para a NASA 1 dia a mais do que o necessário, para garantir 
+  // que o corte em horas da "Janela Deslizante" tenha dados do dia anterior para consultar.
+  const daysToRequest = Math.ceil(firmsPeriodHours / 24) + 1;
   const bbox = "-42.8,-21.2,-42.0,-20.4";
 
-  const urlSNPP = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_SNPP_NRT/${bbox}/${days}`;
-  const urlN20 = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_NOAA20_NRT/${bbox}/${days}`;
-  const urlN21 = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_NOAA21_NRT/${bbox}/${days}`;
-  const urlMODIS = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/MODIS_NRT/${bbox}/${days}`;
+  const urlSNPP = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_SNPP_NRT/${bbox}/${daysToRequest}`;
+  const urlN20 = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_NOAA20_NRT/${bbox}/${daysToRequest}`;
+  const urlN21 = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_NOAA21_NRT/${bbox}/${daysToRequest}`;
+  const urlMODIS = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/MODIS_NRT/${bbox}/${daysToRequest}`;
 
   try {
     const [resSNPP, resN20, resN21, resMODIS] = await Promise.all([fetch(urlSNPP), fetch(urlN20), fetch(urlN21), fetch(urlMODIS)]);
@@ -1064,7 +1066,7 @@ async function fetchFirmsData() {
     const csvMODIS = await resMODIS.text();
 
     if (!resSNPP.ok || csvSNPP.includes("Invalid") || csvSNPP.includes("Exception") || csvSNPP.includes("Error")) {
-      console.error("Erro na API NASA FIRMS (SNPP):", csvSNPP);
+      console.error("Erro na API NASA FIRMS:", csvSNPP);
       document.getElementById('firmsInfo').innerText = "⚠️ Erro na API FIRMS (Verifique a Chave MAP_KEY)";
       document.getElementById('fireCount').innerText = '0';
       document.getElementById('fireFrp').innerText = '0';
@@ -1079,7 +1081,7 @@ async function fetchFirmsData() {
       if (res.ok && !csvText.includes("Invalid") && !csvText.includes("Error")) {
         const lines = csvText.trim().split('\n');
         if (lines.length > 1) {
-          lines.shift(); // remove cabeçalho do satélite secundário
+          lines.shift();
           combinedCSV += '\n' + lines.join('\n');
         }
       }
@@ -1090,25 +1092,13 @@ async function fetchFirmsData() {
     mergeCSV(resMODIS, csvMODIS);
 
     document.getElementById('firmsInfo').innerText = "Dados: VIIRS (SNPP, N20, N21) e MODIS (Terra/Aqua)";
-    firmsCache[firmsPeriod] = combinedCSV;
+    firmsCache[firmsPeriodHours] = combinedCSV;
     processFirmsCSV(combinedCSV);
 
   } catch (e) {
     console.warn("Erro ao buscar FIRMS:", e);
     document.getElementById('firmsInfo').innerText = "⚠️ Falha de conexão com NASA FIRMS";
   }
-}
-
-function formatFirmsDateTime(dateStr, timeStr) {
-  if (!dateStr) return "Data N/A";
-  let h = "00", m = "00";
-  if (timeStr) {
-    let t = timeStr.padStart(4, '0');
-    h = t.substring(0, 2);
-    m = t.substring(2, 4);
-  }
-  let dateObj = new Date(`${dateStr}T${h}:${m}:00Z`);
-  return dateObj.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function processFirmsCSV(csvText) {
@@ -1138,6 +1128,10 @@ function processFirmsCSV(csvText) {
   }
 
   let totalFrp = 0, count = 0, alarmeAcionado = false;
+  
+  // Calcula o limite em milissegundos do Relógio Verdadeiro para a Janela Deslizante
+  const nowMs = Date.now();
+  const cutoffMs = nowMs - (firmsPeriodHours * 60 * 60 * 1000);
 
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(',');
@@ -1157,7 +1151,22 @@ function processFirmsCSV(csvText) {
 
     const acqDate = dateIdx !== -1 ? cols[dateIdx] : '';
     const acqTime = timeIdx !== -1 ? cols[timeIdx] : '';
-    const dataHoraBrasilia = formatFirmsDateTime(acqDate, acqTime);
+    
+    // Tratamento de conversão de fuso horário e criação de Data UTC
+    let t = acqTime.padStart(4, '0');
+    let h = t.substring(0, 2);
+    let m = t.substring(2, 4);
+    let fireDateObj = new Date(`${acqDate}T${h}:${m}:00Z`);
+
+    // ==============================================================
+    // AQUI OCORRE O FILTRO: Joga fora tudo mais antigo que as X horas exatas
+    // ==============================================================
+    if (fireDateObj.getTime() < cutoffMs) {
+        continue; 
+    }
+
+    // Só formata para horário de Brasília os focos que sobreviveram ao filtro
+    const dataHoraBrasilia = fireDateObj.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
     let rawSat = satIdx !== -1 ? cols[satIdx] : '';
     let satName = rawSat;
