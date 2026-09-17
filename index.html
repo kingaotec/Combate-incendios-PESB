@@ -519,9 +519,6 @@ const MAP_KEY = 'e4885bf7243f30d6f28a805f4d70daea';
 let map, currentLayer = 'street';
 let weatherData = {}, fireDataList = [];
 
-// ==========================================
-// 1. INICIALIZAÇÃO DO MAPA 
-// ==========================================
 map = L.map('map').setView([-20.77108, -42.49365], 11);
 
 const tileLayers = {
@@ -534,10 +531,6 @@ tileLayers.street.addTo(map);
 
 let firmsPeriod = 1;
 const firmsCache = { 1: null, 2: null, 3: null };
-
-// ==========================================
-// 3. ÁUDIO DE ALERTA (.m4a)
-// ==========================================
 const frpAlertAudio = new Audio('./assets/alert.m4a');
 
 let userHeading = 0;
@@ -978,11 +971,22 @@ async function loadAllData() {
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('loading');
   btn.innerText = 'Buscando...';
+  
+  // Mostra o bloqueio de tela apenas para o carregamento inicial crítico
   document.getElementById('loadingOverlay').classList.remove('hidden');
 
   try {
+    // 1. Carrega IBGE e Clima primeiro (rápido)
     await fetchMuniMalhas().catch(e => console.warn("Não foi possível carregar malhas do IBGE:", e));
-    await Promise.all([fetchWeatherData(), fetchFirmsData()]);
+    await fetchWeatherData();
+    
+    // 2. Libera a interface imediatamente para o usuário não ficar travado
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    document.getElementById('firmsInfo').innerText = "⏳ Buscando satélites da NASA...";
+
+    // 3. Busca os focos da NASA em segundo plano
+    await fetchFirmsData();
+    
     document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString('pt-BR');
     if(windEnabled) updateWindData();
   } catch (error) {
@@ -990,7 +994,7 @@ async function loadAllData() {
   } finally {
     btn.classList.remove('loading');
     btn.innerText = 'Atualizar Dados';
-    document.getElementById('loadingOverlay').classList.add('hidden');
+    document.getElementById('loadingOverlay').classList.add('hidden'); // Garantia de liberação
     if(!windCanvas) initWindCanvas();
   }
 }
@@ -1025,17 +1029,18 @@ async function setFirmsPeriod(days) {
   const activeBtn = document.getElementById('firms' + days + 'h');
   if (activeBtn) activeBtn.classList.add('active');
 
-  document.getElementById('loadingOverlay').classList.remove('hidden');
+  // Ao trocar o período de horas, não travamos mais a tela inteira
+  document.getElementById('firmsInfo').innerText = "⏳ Atualizando satélites da NASA...";
+  const refreshBtn = document.getElementById('refreshBtn');
+  refreshBtn.classList.add('loading');
+
   try {
     await fetchFirmsData();
   } finally {
-    document.getElementById('loadingOverlay').classList.add('hidden');
+    refreshBtn.classList.remove('loading');
   }
 }
 
-// ==========================================
-// 5. ATUALIZAÇÃO DA API FIRMS (VIIRS + MODIS)
-// ==========================================
 async function fetchFirmsData() {
   fireLayer.clearLayers();
   if (firmsCache[firmsPeriod] !== null) {
@@ -1154,9 +1159,6 @@ function processFirmsCSV(csvText) {
     const acqTime = timeIdx !== -1 ? cols[timeIdx] : '';
     const dataHoraBrasilia = formatFirmsDateTime(acqDate, acqTime);
 
-    // ==========================================
-    // 6. ADIÇÃO DA LEITURA DE TODOS OS SATÉLITES
-    // ==========================================
     let rawSat = satIdx !== -1 ? cols[satIdx] : '';
     let satName = rawSat;
     if (rawSat === 'N') satName = 'Suomi NPP (VIIRS)';
