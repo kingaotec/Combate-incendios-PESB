@@ -996,31 +996,68 @@ async function loadAllData() {
 }
 
 async function fetchWeatherData() {
-  try {
-    const lats = localidades.map(l => l.lat).join(',');
-    const lons = localidades.map(l => l.lon).join(',');
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m&daily=precipitation_sum&past_days=92&forecast_days=1&timezone=America%2FSao_Paulo`;
+  const cacheKey = 'pesb_weather_cache';
+  const cacheTimeKey = 'pesb_weather_cache_time';
+  const cacheDuration = 30 * 60 * 1000; // 30 minutos em milissegundos
+  const now = Date.now();
 
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    // Proteção contra bloqueio por limite de requisições da API
-    if (data.error) {
-      console.error("Erro da API Open-Meteo:", data.reason);
+  const cachedData = lsGet(cacheKey);
+  const cachedTime = lsGet(cacheTimeKey);
+
+  let data;
+  let usedCache = false;
+
+  try {
+    if (cachedData && cachedTime && (now - cachedTime < cacheDuration)) {
+      data = cachedData;
+      usedCache = true;
+    } else {
+      const lats = localidades.map(l => l.lat).join(',');
+      const lons = localidades.map(l => l.lon).join(',');
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m&daily=precipitation_sum&past_days=92&forecast_days=1&timezone=America%2FSao_Paulo`;
+
+      const response = await fetch(url);
+      data = await response.json();
+      
+      if (data.error) {
+        console.error("Erro da API Open-Meteo:", data.reason);
+        if (cachedData) {
+          console.warn("Usando cache expirado devido a bloqueio da API.");
+          data = cachedData;
+          usedCache = true;
+        } else {
+          document.getElementById('localidadesCards').innerHTML = `
+            <div style="padding:12px;background:var(--bg-card);border:1px solid var(--risk-extreme);border-radius:8px;color:var(--text-light);font-size:12px;text-align:center;">
+              <b>Bloqueio Temporário (API de Clima)</b><br>
+              <span style="color:var(--text-muted);font-size:10px;">Aguarde alguns minutos. Motivo: ${data.reason}</span>
+            </div>`;
+          return;
+        }
+      } else {
+        lsSet(cacheKey, data);
+        lsSet(cacheTimeKey, now);
+      }
+    }
+  } catch (err) {
+    console.warn("Falha na comunicação de rede. Tentando usar cache offline...", err);
+    if (cachedData) {
+      data = cachedData;
+      usedCache = true;
+    } else {
       document.getElementById('localidadesCards').innerHTML = `
-        <div style="padding:12px;background:var(--bg-card);border:1px solid var(--risk-extreme);border-radius:8px;color:var(--text-light);font-size:12px;text-align:center;">
-          <b>Bloqueio Temporário (API de Clima)</b><br>
-          <span style="color:var(--text-muted);font-size:10px;">Aguarde alguns minutos. Motivo: ${data.reason}</span>
+        <div style="padding:10px;color:var(--risk-extreme);font-size:11px;text-align:center;">
+          Falha na comunicação meteorológica. Sem dados em cache para exibir.
         </div>`;
       return;
     }
+  }
 
+  try {
     let riscoSoma = 0, fmaSoma = 0, processados = 0;
 
     localidades.forEach((local, index) => {
       const locData = Array.isArray(data) ? data[index] : data;
       
-      // Validação de segurança dos nós do JSON para impedir travamento
       if (!locData || !locData.current || !locData.daily) return;
 
       const temp = locData.current.temperature_2m || 0;
@@ -1056,11 +1093,7 @@ async function fetchWeatherData() {
       renderCards();
     }
   } catch (err) {
-    console.error("Erro fatal na obtenção do clima:", err);
-    document.getElementById('localidadesCards').innerHTML = `
-      <div style="padding:10px;color:var(--risk-extreme);font-size:11px;text-align:center;">
-        Falha na comunicação meteorológica. Verifique sua conexão.
-      </div>`;
+    console.error("Erro fatal ao processar o objeto do clima:", err);
   }
 }
 
