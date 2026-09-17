@@ -996,27 +996,72 @@ async function loadAllData() {
 }
 
 async function fetchWeatherData() {
-  const lats = localidades.map(l => l.lat).join(',');
-  const lons = localidades.map(l => l.lon).join(',');
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m&daily=precipitation_sum&past_days=92&forecast_days=1&timezone=America%2FSao_Paulo`;
+  try {
+    const lats = localidades.map(l => l.lat).join(',');
+    const lons = localidades.map(l => l.lon).join(',');
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m&daily=precipitation_sum&past_days=92&forecast_days=1&timezone=America%2FSao_Paulo`;
 
-  const response = await fetch(url);
-  const data = await response.json();
-  let riscoSoma = 0, fmaSoma = 0;
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    // Proteção contra bloqueio por limite de requisições da API
+    if (data.error) {
+      console.error("Erro da API Open-Meteo:", data.reason);
+      document.getElementById('localidadesCards').innerHTML = `
+        <div style="padding:12px;background:var(--bg-card);border:1px solid var(--risk-extreme);border-radius:8px;color:var(--text-light);font-size:12px;text-align:center;">
+          <b>Bloqueio Temporário (API de Clima)</b><br>
+          <span style="color:var(--text-muted);font-size:10px;">Aguarde alguns minutos. Motivo: ${data.reason}</span>
+        </div>`;
+      return;
+    }
 
-  localidades.forEach((local, index) => {
-    const locData = Array.isArray(data) ? data[index] : data;
-    const temp = locData.current.temperature_2m, umidade = locData.current.relative_humidity_2m, vento = locData.current.wind_speed_10m, ventoDir = locData.current.wind_direction_10m;
-    const chuvas = locData.daily.precipitation_sum, idxHoje = chuvas.length - 1, chuva24h = chuvas[idxHoje] || 0;
-    let diasEstiagem = 0;
-    for (let i = idxHoje; i >= 0; i--) { if (chuvas[i] >= 2.5) break; diasEstiagem++; }
-    const fmaOntem = lsGet(`fma_${local.nome}`) || 5.0, calculoFMA = calcularFMA(umidade, chuva24h, fmaOntem); lsSet(`fma_${local.nome}`, calculoFMA.fma);
-    const riscoCombate = calcularRisco(temp, umidade, vento);
-    weatherData[local.nome] = { temp, umidade, vento, ventoDir, chuva24h, risco: riscoCombate, fma: calculoFMA.fma, diasEstiagem: diasEstiagem };
-    riscoSoma += riscoCombate; fmaSoma += calculoFMA.fma;
-  });
-  atualizarGauges(riscoSoma / localidades.length, fmaSoma / localidades.length);
-  renderCards();
+    let riscoSoma = 0, fmaSoma = 0, processados = 0;
+
+    localidades.forEach((local, index) => {
+      const locData = Array.isArray(data) ? data[index] : data;
+      
+      // Validação de segurança dos nós do JSON para impedir travamento
+      if (!locData || !locData.current || !locData.daily) return;
+
+      const temp = locData.current.temperature_2m || 0;
+      const umidade = locData.current.relative_humidity_2m || 0;
+      const vento = locData.current.wind_speed_10m || 0;
+      const ventoDir = locData.current.wind_direction_10m || 0;
+      
+      const chuvas = locData.daily.precipitation_sum || [];
+      const idxHoje = chuvas.length > 0 ? chuvas.length - 1 : 0;
+      const chuva24h = chuvas[idxHoje] || 0;
+      
+      let diasEstiagem = 0;
+      for (let i = idxHoje; i >= 0; i--) { 
+        if (chuvas[i] >= 2.5) break; 
+        diasEstiagem++; 
+      }
+      
+      const fmaOntem = lsGet(`fma_${local.nome}`) || 5.0;
+      const calculoFMA = calcularFMA(umidade, chuva24h, fmaOntem); 
+      lsSet(`fma_${local.nome}`, calculoFMA.fma);
+      
+      const riscoCombate = calcularRisco(temp, umidade, vento);
+      
+      weatherData[local.nome] = { temp, umidade, vento, ventoDir, chuva24h, risco: riscoCombate, fma: calculoFMA.fma, diasEstiagem: diasEstiagem };
+      
+      riscoSoma += riscoCombate; 
+      fmaSoma += calculoFMA.fma;
+      processados++;
+    });
+
+    if (processados > 0) {
+      atualizarGauges(riscoSoma / processados, fmaSoma / processados);
+      renderCards();
+    }
+  } catch (err) {
+    console.error("Erro fatal na obtenção do clima:", err);
+    document.getElementById('localidadesCards').innerHTML = `
+      <div style="padding:10px;color:var(--risk-extreme);font-size:11px;text-align:center;">
+        Falha na comunicação meteorológica. Verifique sua conexão.
+      </div>`;
+  }
 }
 
 async function setFirmsPeriod(hours) {
