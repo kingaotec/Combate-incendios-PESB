@@ -10,7 +10,7 @@ A aplicação reúne dados meteorológicos e de satélite para auxiliar equipes 
 * 🌡️ Temperatura, umidade relativa e vento
 * 📅 **Dias de estiagem:** Contagem de dias sem chuva significativa (otimizado para 92 dias de histórico em uma única requisição).
 * 🔥 Índice de Risco de Combate a Incêndios
-* 📈 Índice FMA (Fogo de Mato Alegre / Monte Alegre)
+* 📈 Índice FMA (Fórmula de Monte Alegre)
 * 🛰️ Focos de calor da NASA FIRMS com múltiplos períodos
 * 🌬️ Animação de vento em tempo real sobre o mapa
 * 🔔 Alertas sonoros por camada geográfica
@@ -45,7 +45,7 @@ Os 9 municípios e 11 distritos foram unificados em uma única lista dinâmica e
 | **GPS** | Ausente | **Ativação de Geolocalização** com raio de precisão |
 | **Lista de Locais** | Separada e Estática | **Unificada (20 localidades) e Ordenada** pelo maior Risco |
 | **Acessibilidade** | Genérica (`<div>`) | **Botões semânticos e atributos WAI-ARIA** (`aria-expanded`) |
-| **Focos FIRMS** | Apenas 24h | **Atual / 24h / 48h / 72h** com cache independente |
+| **Focos FIRMS** | Apenas 24h | **24h / 48h / 72h** com cache independente |
 | **Alertas Sonoros** | Único para toda a área | **Por camada tática**: PESB $\ge$ 0.1 MW / Zona $\ge$ 5 MW |
 | **Mídia de Alerta** | Base64 embutido no JS | **Arquivo externo (`alert.mp3`)** para carregamento rápido |
 | **Estiagem (FMA)** | 7 dias | **92 dias de histórico** otimizados na API Open-Meteo |
