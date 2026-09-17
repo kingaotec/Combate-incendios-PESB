@@ -345,7 +345,7 @@ html,body{overscroll-behavior-y:none}
 
           <div class="fire-list-container" id="fireListContainer"></div>
 
-          <div style="margin-top:10px;font-size:10px;color:var(--text-dark-muted);text-align:center" id="firmsInfo">Dados VIIRS (SNPP e NOAA-20) - NASA FIRMS</div>
+          <div style="margin-top:10px;font-size:10px;color:var(--text-dark-muted);text-align:center" id="firmsInfo">Dados NASA FIRMS: VIIRS e MODIS</div>
 
           <button class="legend-toggle" id="frpLegendToggle" aria-expanded="false" onclick="toggleFRPLegend()">
             <span class="legend-toggle-text">O que é FRP?</span>
@@ -520,27 +520,23 @@ let map, currentLayer = 'street';
 let weatherData = {}, fireDataList = [];
 
 // ==========================================
-// 1. INICIALIZAÇÃO DO MAPA (Correção)
+// 1. INICIALIZAÇÃO DO MAPA 
 // ==========================================
 map = L.map('map').setView([-20.77108, -42.49365], 11);
 
-// ==========================================
-// 2. DEFINIÇÃO DAS CAMADAS (Correção)
-// ==========================================
 const tileLayers = {
   street: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }),
   satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
   topo: L.tileLayer('https://tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 })
 };
 
-// Adiciona a camada padrão inicial ao mapa
 tileLayers.street.addTo(map);
 
 let firmsPeriod = 1;
 const firmsCache = { 1: null, 2: null, 3: null };
 
 // ==========================================
-// 3. CORREÇÃO DO ÁUDIO PARA O SEU ANEXO (.m4a)
+// 3. ÁUDIO DE ALERTA (.m4a)
 // ==========================================
 const frpAlertAudio = new Audio('./assets/alert.m4a');
 
@@ -642,9 +638,6 @@ function pointInGeoJSONPolygon(point, coords) {
   return inside;
 }
 
-// =======================================================
-// 4. FUNÇÃO ADICIONAL NECESSÁRIA PARA O CÓDIGO FIRMS
-// =======================================================
 function isPointInPolygon(point, vs) {
     let x = point[0], y = point[1];
     let inside = false;
@@ -739,7 +732,6 @@ const polyPESB = [
   [-20.73960,-42.50013],[-20.74653,-42.50033],[-20.75101,-42.49399],[-20.76757,-42.49656],[-20.77108,-42.49365]
 ];
 
-// 2. Anel Externo da Zona de Amortecimento (ID_30000 do arquivo Layers PESB.kml)
 const polyZA = [
   [-20.45230,-42.29622],[-20.45149,-42.29813],[-20.45072,-42.30005],[-20.44998,-42.30199],[-20.44929,-42.30395],
   [-20.44864,-42.30592],[-20.44802,-42.30791],[-20.44745,-42.30991],[-20.44692,-42.31192],[-20.44643,-42.31395],
@@ -898,7 +890,6 @@ const polyZA = [
   [-20.45486,-42.29001],[-20.45413,-42.29195],[-20.45364,-42.29331],[-20.45315,-42.29434],[-20.45230,-42.29622]
 ];
 
-// Instanciação no Leaflet da camada do Parque e da Zona de Amortecimento em anel
 const layerPESB = L.polygon(polyPESB, {
   color: '#22c55e', weight: 2, fillOpacity: 0
 }).addTo(map);
@@ -1042,6 +1033,9 @@ async function setFirmsPeriod(days) {
   }
 }
 
+// ==========================================
+// 5. ATUALIZAÇÃO DA API FIRMS (VIIRS + MODIS)
+// ==========================================
 async function fetchFirmsData() {
   fireLayer.clearLayers();
   if (firmsCache[firmsPeriod] !== null) {
@@ -1054,11 +1048,15 @@ async function fetchFirmsData() {
 
   const urlSNPP = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_SNPP_NRT/${bbox}/${days}`;
   const urlN20 = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_NOAA20_NRT/${bbox}/${days}`;
+  const urlN21 = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/VIIRS_NOAA21_NRT/${bbox}/${days}`;
+  const urlMODIS = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/MODIS_NRT/${bbox}/${days}`;
 
   try {
-    const [resSNPP, resN20] = await Promise.all([fetch(urlSNPP), fetch(urlN20)]);
+    const [resSNPP, resN20, resN21, resMODIS] = await Promise.all([fetch(urlSNPP), fetch(urlN20), fetch(urlN21), fetch(urlMODIS)]);
     const csvSNPP = await resSNPP.text();
     const csvN20 = await resN20.text();
+    const csvN21 = await resN21.text();
+    const csvMODIS = await resMODIS.text();
 
     if (!resSNPP.ok || csvSNPP.includes("Invalid") || csvSNPP.includes("Exception") || csvSNPP.includes("Error")) {
       console.error("Erro na API NASA FIRMS (SNPP):", csvSNPP);
@@ -1072,15 +1070,21 @@ async function fetchFirmsData() {
 
     let combinedCSV = csvSNPP;
 
-    if (resN20.ok && !csvN20.includes("Invalid") && !csvN20.includes("Error")) {
-      const linesN20 = csvN20.trim().split('\n');
-      if (linesN20.length > 1) {
-        linesN20.shift();
-        combinedCSV += '\n' + linesN20.join('\n');
+    const mergeCSV = (res, csvText) => {
+      if (res.ok && !csvText.includes("Invalid") && !csvText.includes("Error")) {
+        const lines = csvText.trim().split('\n');
+        if (lines.length > 1) {
+          lines.shift(); // remove cabeçalho do satélite secundário
+          combinedCSV += '\n' + lines.join('\n');
+        }
       }
-    }
+    };
 
-    document.getElementById('firmsInfo').innerText = "Dados VIIRS (SNPP e NOAA-20) - NASA FIRMS";
+    mergeCSV(resN20, csvN20);
+    mergeCSV(resN21, csvN21);
+    mergeCSV(resMODIS, csvMODIS);
+
+    document.getElementById('firmsInfo').innerText = "Dados: VIIRS (SNPP, N20, N21) e MODIS (Terra/Aqua)";
     firmsCache[firmsPeriod] = combinedCSV;
     processFirmsCSV(combinedCSV);
 
@@ -1150,10 +1154,16 @@ function processFirmsCSV(csvText) {
     const acqTime = timeIdx !== -1 ? cols[timeIdx] : '';
     const dataHoraBrasilia = formatFirmsDateTime(acqDate, acqTime);
 
+    // ==========================================
+    // 6. ADIÇÃO DA LEITURA DE TODOS OS SATÉLITES
+    // ==========================================
     let rawSat = satIdx !== -1 ? cols[satIdx] : '';
     let satName = rawSat;
-    if (rawSat === 'N') satName = 'Suomi NPP';
-    else if (rawSat === 'N20') satName = 'NOAA-20';
+    if (rawSat === 'N') satName = 'Suomi NPP (VIIRS)';
+    else if (rawSat === 'N20') satName = 'NOAA-20 (VIIRS)';
+    else if (rawSat === 'N21') satName = 'NOAA-21 (VIIRS)';
+    else if (rawSat === 'T') satName = 'Terra (MODIS)';
+    else if (rawSat === 'A') satName = 'Aqua (MODIS)';
     else if (!rawSat) satName = 'Desconhecido';
 
     totalFrp += frp;
@@ -1176,7 +1186,7 @@ function processFirmsCSV(csvText) {
       fillOpacity: 0.9
     }).bindPopup(`
       <div class="popup-content">
-        <div class="popup-title">Foco Detectado (VIIRS)</div>
+        <div class="popup-title">Foco Detectado</div>
         <div class="popup-metric"><span class="popup-metric-label">Satélite</span><span class="popup-metric-value">${satName}</span></div>
         <div class="popup-metric"><span class="popup-metric-label">Captura</span><span class="popup-metric-value">${dataHoraBrasilia}</span></div>
         <div class="popup-metric"><span class="popup-metric-label">FRP (Potência)</span><span class="popup-metric-value" style="color:${markerColor}">${frp} MW</span></div>
